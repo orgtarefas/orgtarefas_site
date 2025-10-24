@@ -2,27 +2,34 @@
 let tarefas = [];
 let editandoTarefaId = null;
 
-// Firebase - já inicializado no index.html
-const db = window.db;
-const fb = window.firebaseModules;
+// Firebase - aguardar carregamento
+let db, fb;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     // Aguarda o Firebase carregar
-    setTimeout(() => {
-        if (db) {
-            inicializarFirebase();
-        } else {
-            console.error('Firebase não carregou');
-            document.getElementById('status-sincronizacao').innerHTML = 
-                '<i class="fas fa-exclamation-triangle"></i> Erro Firebase';
-            carregarDoLocalStorage();
-        }
-    }, 1000);
+    setTimeout(inicializarSistema, 100);
+});
+
+function inicializarSistema() {
+    db = window.db;
+    fb = window.firebaseModules;
+    
+    if (db && fb) {
+        console.log('✅ Firebase carregado!', db);
+        inicializarFirebase();
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-bolt"></i> Tempo Real';
+    } else {
+        console.log('❌ Firebase não carregou');
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-exclamation-triangle"></i> Erro Firebase';
+        carregarDoLocalStorage();
+    }
     
     atualizarDataAtual();
     configurarDataMinima();
-});
+}
 
 async function inicializarFirebase() {
     try {
@@ -37,8 +44,6 @@ async function inicializarFirebase() {
                 ...doc.data()
             }));
             atualizarInterface();
-            document.getElementById('status-sincronizacao').innerHTML = 
-                '<i class="fas fa-bolt"></i> Tempo Real';
         });
             
         console.log('✅ Firebase conectado - Modo tempo real ativo');
@@ -75,6 +80,12 @@ function configurarDataMinima() {
 async function salvarTarefa(event) {
     event.preventDefault();
     
+    // Verificar se Firebase está pronto
+    if (!db || !fb) {
+        mostrarNotificacao('❌ Firebase não carregou. Recarregue a página.', 'error');
+        return;
+    }
+    
     const tarefa = {
         titulo: document.getElementById('tarefaTitulo').value,
         descricao: document.getElementById('tarefaDescricao').value,
@@ -109,6 +120,12 @@ async function salvarTarefa(event) {
 async function excluirTarefa(tarefaId) {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
     
+    // Verificar se Firebase está pronto
+    if (!db || !fb) {
+        mostrarNotificacao('❌ Firebase não carregou. Recarregue a página.', 'error');
+        return;
+    }
+    
     try {
         await fb.deleteDoc(fb.doc(db, 'tarefas', tarefaId));
         mostrarNotificacao('✅ Tarefa excluída!', 'success');
@@ -119,6 +136,11 @@ async function excluirTarefa(tarefaId) {
 }
 
 function alternarStatusSubtarefa(tarefaId, subtarefaIndex) {
+    if (!db || !fb) {
+        mostrarNotificacao('❌ Firebase não carregou. Recarregue a página.', 'error');
+        return;
+    }
+    
     const tarefa = tarefas.find(t => t.id === tarefaId);
     if (tarefa && tarefa.subtarefas[subtarefaIndex]) {
         const subtarefa = tarefa.subtarefas[subtarefaIndex];
@@ -430,6 +452,10 @@ function importarDados() {
                 
                 if (dados.tarefas && Array.isArray(dados.tarefas)) {
                     if (confirm(`Importar ${dados.tarefas.length} tarefas?`)) {
+                        if (!db || !fb) {
+                            mostrarNotificacao('❌ Firebase não disponível', 'error');
+                            return;
+                        }
                         // Adicionar cada tarefa ao Firebase
                         dados.tarefas.forEach(async tarefa => {
                             await fb.addDoc(fb.collection(db, 'tarefas'), tarefa);
