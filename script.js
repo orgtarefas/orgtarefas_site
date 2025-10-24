@@ -1,6 +1,7 @@
 // Gerenciamento de Estado
 let tarefas = [];
 let editandoTarefaId = null;
+const ARQUIVO_JSON = 'db.json';
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
@@ -23,48 +24,102 @@ function atualizarDataAtual() {
 
 // ========== GERENCIAMENTO DE DADOS ==========
 
-function carregarDados() {
+async function carregarDados() {
+    try {
+        // Primeiro tenta carregar do arquivo JSON
+        const response = await fetch(ARQUIVO_JSON);
+        if (response.ok) {
+            const dados = await response.json();
+            tarefas = dados.tarefas || [];
+            console.log('Dados carregados do arquivo JSON');
+            document.getElementById('status-sincronizacao').innerHTML = 
+                '<i class="fas fa-check-circle"></i> JSON';
+        } else {
+            throw new Error('Arquivo JSON não encontrado');
+        }
+    } catch (error) {
+        // Fallback para localStorage
+        console.log('Carregando do localStorage...', error);
+        carregarDoLocalStorage();
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-database"></i> Local';
+    }
+}
+
+async function salvarDados() {
+    try {
+        // Salva no arquivo JSON (faz download)
+        await salvarNoArquivoJSON();
+        
+        // Também salva no localStorage como backup
+        salvarNoLocalStorage();
+        
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-check-circle"></i> JSON';
+            
+    } catch (error) {
+        console.log('Erro ao salvar no JSON, usando apenas localStorage...', error);
+        salvarNoLocalStorage();
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-database"></i> Local';
+    }
+    
+    atualizarInterface();
+}
+
+function carregarDoLocalStorage() {
     const dadosSalvos = localStorage.getItem('sistema-planejamento');
     if (dadosSalvos) {
         tarefas = JSON.parse(dadosSalvos);
     } else {
-        // Dados de exemplo
-        tarefas = [
-            {
-                id: 1,
-                titulo: 'Planejamento do Projeto',
-                descricao: 'Definir escopo e recursos do projeto principal',
-                prioridade: 'alta',
-                status: 'em-andamento',
-                dataInicio: '2024-01-15',
-                dataFim: '2024-02-15',
-                responsavel: 'João Silva',
-                subtarefas: [
-                    { titulo: 'Reunião de alinhamento', dataFim: '2024-01-20', status: 'concluido' },
-                    { titulo: 'Documentação do escopo', dataFim: '2024-01-25', status: 'pendente' }
-                ],
-                dataCriacao: new Date().toISOString()
-            },
-            {
-                id: 2,
-                titulo: 'Treinamento da Equipe',
-                descricao: 'Capacitação em novas tecnologias',
-                prioridade: 'media',
-                status: 'pendente',
-                dataInicio: '2024-02-01',
-                dataFim: '2024-02-28',
-                responsavel: 'Maria Santos',
-                subtarefas: [],
-                dataCriacao: new Date().toISOString()
-            }
-        ];
-        salvarDados();
+        // Dados iniciais
+        tarefas = [];
     }
 }
 
-function salvarDados() {
+function salvarNoLocalStorage() {
     localStorage.setItem('sistema-planejamento', JSON.stringify(tarefas));
-    atualizarInterface();
+}
+
+async function salvarNoArquivoJSON() {
+    return new Promise((resolve, reject) => {
+        try {
+            // Criar objeto com os dados
+            const dados = {
+                tarefas: tarefas,
+                metadata: {
+                    ultimaAtualizacao: new Date().toISOString(),
+                    totalTarefas: tarefas.length,
+                    versao: '1.0',
+                    exportadoPor: 'Sistema de Planejamento'
+                }
+            };
+            
+            // Converter para Blob e criar download
+            const blob = new Blob([JSON.stringify(dados, null, 2)], { 
+                type: 'application/json;charset=utf-8' 
+            });
+            const url = URL.createObjectURL(blob);
+            
+            // Forçar download do arquivo atualizado
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = ARQUIVO_JSON;
+            a.style.display = 'none';
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Limpar URL
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            
+            resolve();
+            
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
 // ========== GERENCIAMENTO DE TAREFAS ==========
@@ -102,6 +157,11 @@ function preencherFormulario(tarefaId) {
     document.getElementById('tarefaDataFim').value = tarefa.dataFim;
     document.getElementById('tarefaResponsavel').value = tarefa.responsavel || '';
     
+    // Configurar data mínima
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('tarefaDataInicio').min = hoje;
+    document.getElementById('tarefaDataFim').min = hoje;
+    
     // Subtarefas
     const listaSubtarefas = document.getElementById('lista-subtarefas');
     listaSubtarefas.innerHTML = '';
@@ -113,6 +173,11 @@ function preencherFormulario(tarefaId) {
 function limparFormulario() {
     document.getElementById('formTarefa').reset();
     document.getElementById('lista-subtarefas').innerHTML = '';
+    
+    // Configurar data mínima
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('tarefaDataInicio').min = hoje;
+    document.getElementById('tarefaDataFim').min = hoje;
 }
 
 function salvarTarefa(event) {
@@ -130,7 +195,8 @@ function salvarTarefa(event) {
         subtarefas: coletarSubtarefas(),
         dataCriacao: editandoTarefaId ? 
             tarefas.find(t => t.id == editandoTarefaId).dataCriacao : 
-            new Date().toISOString()
+            new Date().toISOString(),
+        dataAtualizacao: new Date().toISOString()
     };
     
     if (editandoTarefaId) {
@@ -142,6 +208,9 @@ function salvarTarefa(event) {
     
     salvarDados();
     fecharModalTarefa();
+    
+    // Mostrar notificação
+    mostrarNotificacao('Tarefa salva com sucesso!', 'success');
 }
 
 function coletarSubtarefas() {
@@ -169,6 +238,7 @@ function excluirTarefa(tarefaId) {
     if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
         tarefas = tarefas.filter(t => t.id != tarefaId);
         salvarDados();
+        mostrarNotificacao('Tarefa excluída com sucesso!', 'success');
     }
 }
 
@@ -371,6 +441,8 @@ function exportarDados() {
     a.download = `backup-planejamento-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    mostrarNotificacao('Dados exportados com sucesso!', 'success');
 }
 
 function importarDados() {
@@ -390,13 +462,13 @@ function importarDados() {
                     if (confirm(`Importar ${dados.tarefas.length} tarefas? Isso substituirá os dados atuais.`)) {
                         tarefas = dados.tarefas;
                         salvarDados();
-                        alert('Dados importados com sucesso!');
+                        mostrarNotificacao('Dados importados com sucesso!', 'success');
                     }
                 } else {
-                    alert('Arquivo inválido!');
+                    mostrarNotificacao('Arquivo inválido!', 'error');
                 }
             } catch (error) {
-                alert('Erro ao importar arquivo: ' + error.message);
+                mostrarNotificacao('Erro ao importar arquivo: ' + error.message, 'error');
             }
         };
         
@@ -410,6 +482,32 @@ function importarDados() {
 
 function formatarData(dataString) {
     return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
+}
+
+function mostrarNotificacao(mensagem, tipo = 'info') {
+    // Criar elemento de notificação
+    const notificacao = document.createElement('div');
+    notificacao.className = `notificacao ${tipo}`;
+    notificacao.innerHTML = `
+        <i class="fas fa-${tipo === 'success' ? 'check' : tipo === 'error' ? 'exclamation-triangle' : 'info'}-circle"></i>
+        <span>${mensagem}</span>
+    `;
+    
+    // Adicionar ao body
+    document.body.appendChild(notificacao);
+    
+    // Mostrar
+    setTimeout(() => notificacao.classList.add('show'), 100);
+    
+    // Remover após 3 segundos
+    setTimeout(() => {
+        notificacao.classList.remove('show');
+        setTimeout(() => {
+            if (notificacao.parentNode) {
+                notificacao.parentNode.removeChild(notificacao);
+            }
+        }, 300);
+    }, 3000);
 }
 
 // Fechar modal clicando fora
