@@ -1,14 +1,54 @@
 // Gerenciamento de Estado
 let tarefas = [];
 let editandoTarefaId = null;
-const ARQUIVO_JSON = 'db.json';
+
+// Firebase - já inicializado no index.html
+const db = window.db;
+const fb = window.firebaseModules;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
-    carregarDados();
-    atualizarInterface();
+    // Aguarda o Firebase carregar
+    setTimeout(() => {
+        if (db) {
+            inicializarFirebase();
+        } else {
+            console.error('Firebase não carregou');
+            document.getElementById('status-sincronizacao').innerHTML = 
+                '<i class="fas fa-exclamation-triangle"></i> Erro Firebase';
+            carregarDoLocalStorage();
+        }
+    }, 1000);
+    
     atualizarDataAtual();
+    configurarDataMinima();
 });
+
+async function inicializarFirebase() {
+    try {
+        console.log('🔥 Conectando ao Firebase...');
+        
+        // Configurar listener em tempo real
+        const q = fb.query(fb.collection(db, 'tarefas'), fb.orderBy('dataCriacao', 'desc'));
+        
+        fb.onSnapshot(q, (snapshot) => {
+            tarefas = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            atualizarInterface();
+            document.getElementById('status-sincronizacao').innerHTML = 
+                '<i class="fas fa-bolt"></i> Tempo Real';
+        });
+            
+        console.log('✅ Firebase conectado - Modo tempo real ativo');
+    } catch (error) {
+        console.error('❌ Erro Firebase:', error);
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-exclamation-triangle"></i> Offline';
+        carregarDoLocalStorage();
+    }
+}
 
 // Data Atual
 function atualizarDataAtual() {
@@ -22,58 +62,80 @@ function atualizarDataAtual() {
     });
 }
 
-// ========== GERENCIAMENTO DE DADOS ==========
+function configurarDataMinima() {
+    const hoje = new Date().toISOString().split('T')[0];
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        input.min = hoje;
+    });
+}
 
-async function carregarDados() {
+// ========== GERENCIAMENTO DE TAREFAS ==========
+
+async function salvarTarefa(event) {
+    event.preventDefault();
+    
+    const tarefa = {
+        titulo: document.getElementById('tarefaTitulo').value,
+        descricao: document.getElementById('tarefaDescricao').value,
+        prioridade: document.getElementById('tarefaPrioridade').value,
+        status: document.getElementById('tarefaStatus').value,
+        dataInicio: document.getElementById('tarefaDataInicio').value,
+        dataFim: document.getElementById('tarefaDataFim').value,
+        responsavel: document.getElementById('tarefaResponsavel').value,
+        subtarefas: coletarSubtarefas(),
+        dataCriacao: editandoTarefaId ? 
+            tarefas.find(t => t.id === editandoTarefaId).dataCriacao : 
+            fb.serverTimestamp(),
+        dataAtualizacao: fb.serverTimestamp()
+    };
+    
     try {
-        // Primeiro tenta carregar do arquivo JSON
-        const response = await fetch(ARQUIVO_JSON);
-        if (response.ok) {
-            const dados = await response.json();
-            tarefas = dados.tarefas || [];
-            console.log('Dados carregados do arquivo JSON');
-            document.getElementById('status-sincronizacao').innerHTML = 
-                '<i class="fas fa-check-circle"></i> JSON';
+        if (editandoTarefaId) {
+            await fb.updateDoc(fb.doc(db, 'tarefas', editandoTarefaId), tarefa);
+            mostrarNotificacao('✅ Tarefa atualizada! Todos verão a mudança.', 'success');
         } else {
-            throw new Error('Arquivo JSON não encontrado');
+            await fb.addDoc(fb.collection(db, 'tarefas'), tarefa);
+            mostrarNotificacao('✅ Nova tarefa criada! Disponível para todos.', 'success');
         }
+        
+        fecharModalTarefa();
     } catch (error) {
-        // Fallback para localStorage
-        console.log('Carregando do localStorage...', error);
-        carregarDoLocalStorage();
-        document.getElementById('status-sincronizacao').innerHTML = 
-            '<i class="fas fa-database"></i> Local';
+        console.error('Erro ao salvar:', error);
+        mostrarNotificacao('❌ Erro ao salvar tarefa', 'error');
     }
 }
 
-async function salvarDados() {
-    try {
-        // Salva no arquivo JSON (faz download)
-        await salvarNoArquivoJSON();
-        
-        // Também salva no localStorage como backup
-        salvarNoLocalStorage();
-        
-        document.getElementById('status-sincronizacao').innerHTML = 
-            '<i class="fas fa-check-circle"></i> JSON';
-            
-    } catch (error) {
-        console.log('Erro ao salvar no JSON, usando apenas localStorage...', error);
-        salvarNoLocalStorage();
-        document.getElementById('status-sincronizacao').innerHTML = 
-            '<i class="fas fa-database"></i> Local';
-    }
+async function excluirTarefa(tarefaId) {
+    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
     
-    atualizarInterface();
+    try {
+        await fb.deleteDoc(fb.doc(db, 'tarefas', tarefaId));
+        mostrarNotificacao('✅ Tarefa excluída!', 'success');
+    } catch (error) {
+        console.error('Erro ao excluir:', error);
+        mostrarNotificacao('❌ Erro ao excluir tarefa', 'error');
+    }
+}
+
+function alternarStatusSubtarefa(tarefaId, subtarefaIndex) {
+    const tarefa = tarefas.find(t => t.id === tarefaId);
+    if (tarefa && tarefa.subtarefas[subtarefaIndex]) {
+        const subtarefa = tarefa.subtarefas[subtarefaIndex];
+        subtarefa.status = subtarefa.status === 'concluido' ? 'pendente' : 'concluido';
+        
+        // Atualizar no Firebase
+        fb.updateDoc(fb.doc(db, 'tarefas', tarefaId), {
+            subtarefas: tarefa.subtarefas
+        });
+    }
 }
 
 function carregarDoLocalStorage() {
     const dadosSalvos = localStorage.getItem('sistema-planejamento');
     if (dadosSalvos) {
         tarefas = JSON.parse(dadosSalvos);
-    } else {
-        // Dados iniciais
-        tarefas = [];
+        atualizarInterface();
     }
 }
 
@@ -81,48 +143,7 @@ function salvarNoLocalStorage() {
     localStorage.setItem('sistema-planejamento', JSON.stringify(tarefas));
 }
 
-async function salvarNoArquivoJSON() {
-    return new Promise((resolve, reject) => {
-        try {
-            // Criar objeto com os dados
-            const dados = {
-                tarefas: tarefas,
-                metadata: {
-                    ultimaAtualizacao: new Date().toISOString(),
-                    totalTarefas: tarefas.length,
-                    versao: '1.0',
-                    exportadoPor: 'Sistema de Planejamento'
-                }
-            };
-            
-            // Converter para Blob e criar download
-            const blob = new Blob([JSON.stringify(dados, null, 2)], { 
-                type: 'application/json;charset=utf-8' 
-            });
-            const url = URL.createObjectURL(blob);
-            
-            // Forçar download do arquivo atualizado
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = ARQUIVO_JSON;
-            a.style.display = 'none';
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Limpar URL
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-            
-            resolve();
-            
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// ========== GERENCIAMENTO DE TAREFAS ==========
+// ========== MODAL E FORMULÁRIO ==========
 
 function abrirModalTarefa(tarefaId = null) {
     editandoTarefaId = tarefaId;
@@ -146,7 +167,7 @@ function fecharModalTarefa() {
 }
 
 function preencherFormulario(tarefaId) {
-    const tarefa = tarefas.find(t => t.id == tarefaId);
+    const tarefa = tarefas.find(t => t.id === tarefaId);
     if (!tarefa) return;
     
     document.getElementById('tarefaTitulo').value = tarefa.titulo;
@@ -174,43 +195,9 @@ function limparFormulario() {
     document.getElementById('formTarefa').reset();
     document.getElementById('lista-subtarefas').innerHTML = '';
     
-    // Configurar data mínima
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('tarefaDataInicio').min = hoje;
     document.getElementById('tarefaDataFim').min = hoje;
-}
-
-function salvarTarefa(event) {
-    event.preventDefault();
-    
-    const tarefa = {
-        id: editandoTarefaId || Date.now(),
-        titulo: document.getElementById('tarefaTitulo').value,
-        descricao: document.getElementById('tarefaDescricao').value,
-        prioridade: document.getElementById('tarefaPrioridade').value,
-        status: document.getElementById('tarefaStatus').value,
-        dataInicio: document.getElementById('tarefaDataInicio').value,
-        dataFim: document.getElementById('tarefaDataFim').value,
-        responsavel: document.getElementById('tarefaResponsavel').value,
-        subtarefas: coletarSubtarefas(),
-        dataCriacao: editandoTarefaId ? 
-            tarefas.find(t => t.id == editandoTarefaId).dataCriacao : 
-            new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString()
-    };
-    
-    if (editandoTarefaId) {
-        const index = tarefas.findIndex(t => t.id == editandoTarefaId);
-        tarefas[index] = tarefa;
-    } else {
-        tarefas.push(tarefa);
-    }
-    
-    salvarDados();
-    fecharModalTarefa();
-    
-    // Mostrar notificação
-    mostrarNotificacao('Tarefa salva com sucesso!', 'success');
 }
 
 function coletarSubtarefas() {
@@ -234,24 +221,7 @@ function coletarSubtarefas() {
     return subtarefas;
 }
 
-function excluirTarefa(tarefaId) {
-    if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
-        tarefas = tarefas.filter(t => t.id != tarefaId);
-        salvarDados();
-        mostrarNotificacao('Tarefa excluída com sucesso!', 'success');
-    }
-}
-
-function alternarStatusSubtarefa(tarefaId, subtarefaIndex) {
-    const tarefa = tarefas.find(t => t.id == tarefaId);
-    if (tarefa && tarefa.subtarefas[subtarefaIndex]) {
-        const subtarefa = tarefa.subtarefas[subtarefaIndex];
-        subtarefa.status = subtarefa.status === 'concluido' ? 'pendente' : 'concluido';
-        salvarDados();
-    }
-}
-
-// ========== SUBTAREFAS NO FORM ==========
+// ========== SUBTAREFAS ==========
 
 function adicionarSubtarefa(dados = null) {
     const template = document.getElementById('templateSubtarefa');
@@ -317,10 +287,10 @@ function criarElementoTarefa(tarefa) {
                 </div>
             </div>
             <div class="task-actions">
-                <button class="btn btn-outline btn-sm" onclick="abrirModalTarefa(${tarefa.id})">
+                <button class="btn btn-outline btn-sm" onclick="abrirModalTarefa('${tarefa.id}')">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-outline btn-sm" onclick="excluirTarefa(${tarefa.id})">
+                <button class="btn btn-outline btn-sm" onclick="excluirTarefa('${tarefa.id}')">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -347,7 +317,7 @@ function criarHTMLSubtarefas(tarefa) {
         html += `
             <div class="subtask-item ${concluida ? 'concluido' : ''}">
                 <input type="checkbox" ${concluida ? 'checked' : ''} 
-                    onchange="alternarStatusSubtarefa(${tarefa.id}, ${index})">
+                    onchange="alternarStatusSubtarefa('${tarefa.id}', ${index})">
                 <span>${subtarefa.titulo}</span>
                 ${subtarefa.dataFim ? `<small>(${formatarData(subtarefa.dataFim)})</small>` : ''}
             </div>
@@ -459,16 +429,18 @@ function importarDados() {
                 const dados = JSON.parse(event.target.result);
                 
                 if (dados.tarefas && Array.isArray(dados.tarefas)) {
-                    if (confirm(`Importar ${dados.tarefas.length} tarefas? Isso substituirá os dados atuais.`)) {
-                        tarefas = dados.tarefas;
-                        salvarDados();
-                        mostrarNotificacao('Dados importados com sucesso!', 'success');
+                    if (confirm(`Importar ${dados.tarefas.length} tarefas?`)) {
+                        // Adicionar cada tarefa ao Firebase
+                        dados.tarefas.forEach(async tarefa => {
+                            await fb.addDoc(fb.collection(db, 'tarefas'), tarefa);
+                        });
+                        mostrarNotificacao('Tarefas importadas com sucesso!', 'success');
                     }
                 } else {
                     mostrarNotificacao('Arquivo inválido!', 'error');
                 }
             } catch (error) {
-                mostrarNotificacao('Erro ao importar arquivo: ' + error.message, 'error');
+                mostrarNotificacao('Erro ao importar arquivo', 'error');
             }
         };
         
@@ -485,7 +457,6 @@ function formatarData(dataString) {
 }
 
 function mostrarNotificacao(mensagem, tipo = 'info') {
-    // Criar elemento de notificação
     const notificacao = document.createElement('div');
     notificacao.className = `notificacao ${tipo}`;
     notificacao.innerHTML = `
@@ -493,13 +464,10 @@ function mostrarNotificacao(mensagem, tipo = 'info') {
         <span>${mensagem}</span>
     `;
     
-    // Adicionar ao body
     document.body.appendChild(notificacao);
     
-    // Mostrar
     setTimeout(() => notificacao.classList.add('show'), 100);
     
-    // Remover após 3 segundos
     setTimeout(() => {
         notificacao.classList.remove('show');
         setTimeout(() => {

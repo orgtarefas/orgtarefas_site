@@ -177,7 +177,32 @@
         </div>
     </template>
 
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
+            authDomain: "orgtarefas-85358.firebaseapp.com",
+            projectId: "orgtarefas-85358",
+            storageBucket: "orgtarefas-85358.firebasestorage.app",
+            messagingSenderId: "1023569488575",
+            appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Torna global para o script.js acessar
+        window.db = db;
+        window.firebaseModules = {
+            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+        };
+        console.log('✅ Firebase configurado!');
+    </script>
+
     <script src="script.js"></script>
 </body>
-
 </html>
