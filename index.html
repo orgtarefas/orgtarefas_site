@@ -8,13 +8,57 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- Cabeçalho -->
+    <!-- Tela de Login -->
+    <div id="telaLogin" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1><i class="fas fa-tasks"></i> Sistema de Planejamento</h1>
+                <p>Acesso restrito - Controle de usuários</p>
+            </div>
+            
+            <form id="formLogin" onsubmit="fazerLogin(event)">
+                <div class="form-group">
+                    <label for="loginUsuario">Usuário</label>
+                    <input type="text" id="loginUsuario" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginSenha">Senha</label>
+                    <input type="password" id="loginSenha" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+                
+                <div class="login-info">
+                    <p><strong>Admin:</strong> admin / admin123</p>
+                    <p><strong>Usuário:</strong> usuario / senha123</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sistema Principal (inicialmente oculto) -->
+    <div id="sistemaPrincipal" class="container" style="display: none;">
+        <!-- Cabeçalho com informações do usuário -->
         <header class="header">
-            <h1><i class="fas fa-tasks"></i> Sistema de Planejamento</h1>
+            <div>
+                <h1><i class="fas fa-tasks"></i> Sistema de Planejamentos</h1>
+                <div class="user-info">
+                    <span id="infoUsuario"></span>
+                    <span id="tempoRestante"></span>
+                </div>
+            </div>
             <div class="header-info">
                 <span id="data-atual"></span>
                 <span id="status-sincronizacao"><i class="fas fa-check-circle"></i> Local</span>
+                <button class="btn btn-outline btn-sm" onclick="sair()">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnAdmin" style="display: none;" onclick="abrirPainelAdmin()">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
             </div>
         </header>
 
@@ -84,6 +128,54 @@
                 <i class="fas fa-clipboard-list"></i>
                 <h3>Nenhuma tarefa encontrada</h3>
                 <p>Clique em "Nova Tarefa" para começar</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Painel Admin -->
+    <div id="modalAdmin" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Painel Administrativo</h2>
+                <span class="close" onclick="fecharPainelAdmin()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="admin-section">
+                    <h3>Controle de Usuários</h3>
+                    <div id="listaUsuarios" class="users-list">
+                        <!-- Usuários serão carregados aqui -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <h4>Adicionar Novo Usuário</h4>
+                        <div class="form-row">
+                            <input type="text" id="novoUsuario" placeholder="Nome de usuário" class="form-control">
+                            <input type="password" id="novaSenha" placeholder="Senha" class="form-control">
+                            <select id="novoNivel" class="form-control">
+                                <option value="usuario">Usuário</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="adicionarUsuario()">
+                                <i class="fas fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>Configurações do Sistema</h3>
+                    <div class="form-group">
+                        <label for="tempoSessao">Tempo de Sessão (dias):</label>
+                        <input type="number" id="tempoSessao" value="30" min="1" max="365">
+                    </div>
+                    <div class="form-group">
+                        <label for="maximoSessoes">Máximo de sessões por usuário:</label>
+                        <input type="number" id="maximoSessoes" value="1" min="1" max="10">
+                    </div>
+                    <button class="btn btn-primary" onclick="salvarConfiguracoes()">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -180,7 +272,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, increment, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
@@ -191,14 +283,12 @@
             appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // Torna global para o script.js acessar
         window.db = db;
         window.firebaseModules = {
-            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, increment, getDocs
         };
         console.log('✅ Firebase configurado!');
     </script>
