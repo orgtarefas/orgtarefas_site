@@ -44,10 +44,11 @@ function configurarAuthListener() {
 // Verificar permissões do usuário
 async function verificarPermissaoUsuario(user) {
     try {
+        // Buscar na coleção "usuarios" (que já existe)
         const userDoc = await fb.getDoc(fb.doc(db, 'usuarios', user.uid));
         
         if (!userDoc.exists()) {
-            console.log('❌ Usuário não encontrado na base');
+            console.log('❌ Usuário não encontrado na coleção usuarios');
             await logout();
             mostrarNotificacao('Usuário não autorizado.', 'error');
             return;
@@ -112,12 +113,6 @@ async function handleLogin(event) {
     const password = document.getElementById('loginPassword').value;
     const rememberMe = document.getElementById('rememberMe').checked;
     
-    // Validar formato de email
-    if (!validarEmail(email)) {
-        mostrarNotificacao('Por favor, insira um login válido.', 'error');
-        return;
-    }
-    
     await realizarLogin(email, password, rememberMe);
 }
 
@@ -133,20 +128,7 @@ async function realizarLogin(email, password, rememberMe) {
         btnText.textContent = 'Autenticando...';
         spinner.classList.remove('hidden');
         
-        // Verificar se usuário existe e está ativo
-        const usersQuery = fb.query(
-            fb.collection(db, 'usuarios'),
-            fb.where('email', '==', email),
-            fb.where('ativo', '==', true)
-        );
-        
-        const userSnapshot = await fb.getDocs(usersQuery);
-        
-        if (userSnapshot.empty) {
-            throw new Error('Usuário não encontrado ou desativado');
-        }
-        
-        // Fazer login com Firebase Auth
+        // Fazer login direto com Firebase Auth
         const userCredential = await fb.signInWithEmailAndPassword(auth, email, password);
         console.log('✅ Login realizado com sucesso');
         
@@ -233,11 +215,6 @@ async function logout() {
 }
 
 // Utilitários
-function validarEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-}
-
 function gerarSessionId() {
     return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
 }

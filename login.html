@@ -19,9 +19,9 @@
             <form id="loginForm" class="login-form">
                 <div class="form-group">
                     <label for="loginEmail">
-                        <i class="fas fa-user-tie"></i> Login Profissional
+                        <i class="fas fa-user-tie"></i> Email Profissional
                     </label>
-                    <input type="text" id="loginEmail" required placeholder="Seu login corporativo">
+                    <input type="email" id="loginEmail" required placeholder="seu.email@empresa.com">
                 </div>
 
                 <div class="form-group">
@@ -121,6 +121,7 @@
                 signInWithEmailAndPassword, signOut, onAuthStateChanged
             }
         };
+        console.log('✅ Firebase Login configurado!');
     </script>
 
     <script src="login.js"></script>
