@@ -142,7 +142,7 @@ async function realizarLogin(email, password, rememberMe) {
         }
         
         loginAttempts = 0;
-        mostrarNotificacao('Login realizado com sucesso!', 'success');
+        mostrarNotificacao('Login realizado com sucesso! Redirecionando...', 'success');
         
     } catch (error) {
         console.error('❌ Erro no login:', error);
@@ -190,27 +190,42 @@ function verificarLoginSalvo() {
     }
 }
 
-// Logout
+// Logout - CORRIGIDO
 async function logout() {
     try {
+        console.log('🔒 Iniciando logout...');
+        
         if (auth.currentUser) {
+            console.log('👤 Usuário atual:', auth.currentUser.email);
+            
             // Atualizar status do usuário
-            const userDoc = await fb.getDoc(fb.doc(db, 'usuarios', auth.currentUser.uid));
-            if (userDoc.exists()) {
-                await fb.updateDoc(fb.doc(db, 'usuarios', auth.currentUser.uid), {
-                    sessionId: null,
-                    ultimoLogout: fb.serverTimestamp()
-                });
+            try {
+                const userDoc = await fb.getDoc(fb.doc(db, 'usuarios', auth.currentUser.uid));
+                if (userDoc.exists()) {
+                    await fb.updateDoc(fb.doc(db, 'usuarios', auth.currentUser.uid), {
+                        sessionId: null,
+                        ultimoLogout: fb.serverTimestamp()
+                    });
+                    console.log('✅ Status do usuário atualizado');
+                }
+            } catch (updateError) {
+                console.warn('⚠️ Não foi possível atualizar status do usuário:', updateError);
             }
             
             await fb.signOut(auth);
+            console.log('✅ SignOut realizado');
         }
         
         localStorage.removeItem('currentSessionId');
         currentUser = null;
         
+        console.log('✅ Redirecionando para login...');
+        window.location.href = 'login.html';
+        
     } catch (error) {
-        console.error('Erro no logout:', error);
+        console.error('❌ Erro no logout:', error);
+        // Mesmo com erro, redireciona para login
+        window.location.href = 'login.html';
     }
 }
 
@@ -260,6 +275,6 @@ window.onclick = function(event) {
     }
 }
 
-// Exportar funções globais
+// Exportar funções globais - CORRIGIDO
 window.logout = logout;
 window.fecharModalBloqueio = fecharModalBloqueio;
