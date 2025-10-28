@@ -3,6 +3,9 @@ let tarefas = [];
 let usuarios = [];
 let editandoTarefaId = null;
 
+// Firebase
+let db;
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando sistema...');
@@ -28,12 +31,13 @@ function inicializarSistema() {
     console.log('🔥 Inicializando Firebase...');
     
     // Aguardar Firebase carregar
-    if (!window.db) {
+    if (!window.firebaseReady) {
         console.log('⏳ Aguardando Firebase...');
         setTimeout(inicializarSistema, 100);
         return;
     }
 
+    db = window.db;
     console.log('✅ Firebase carregado!');
     
     try {
@@ -41,19 +45,20 @@ function inicializarSistema() {
         carregarUsuarios();
         configurarFirebase();
         
+        // Esconder loading e mostrar conteúdo
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
         document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Offline';
-        mostrarNotificacao('Erro ao conectar com o banco de dados', 'error');
     }
 }
 
 function configurarDataMinima() {
     const hoje = new Date().toISOString().split('T')[0];
-    const dataInputs = document.querySelectorAll('input[type="date"]');
-    dataInputs.forEach(input => {
-        input.min = hoje;
-    });
+    document.getElementById('tarefaDataInicio').min = hoje;
+    document.getElementById('tarefaDataFim').min = hoje;
 }
 
 function configurarFirebase() {
@@ -77,7 +82,6 @@ function configurarFirebase() {
             (error) => {
                 console.error('❌ Erro no Firestore:', error);
                 document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
-                mostrarNotificacao('Erro ao carregar tarefas', 'error');
             }
         );
 }
@@ -213,17 +217,13 @@ function atualizarInterface() {
 function atualizarEstatisticas() {
     const total = tarefas.length;
     const pendentes = tarefas.filter(t => t.status === 'pendente').length;
+    const andamento = tarefas.filter(t => t.status === 'andamento').length;
     const concluidas = tarefas.filter(t => t.status === 'concluido').length;
-    
-    const hoje = new Date().toISOString().split('T')[0];
-    const atrasadas = tarefas.filter(t => 
-        t.dataFim < hoje && t.status !== 'concluido'
-    ).length;
 
     document.getElementById('total-tarefas').textContent = total;
     document.getElementById('tarefas-pendentes').textContent = pendentes;
+    document.getElementById('tarefas-andamento').textContent = andamento;
     document.getElementById('tarefas-concluidas').textContent = concluidas;
-    document.getElementById('tarefas-atrasadas').textContent = atrasadas;
 }
 
 function atualizarListaTarefas() {
@@ -281,37 +281,15 @@ function filtrarTarefas() {
     const status = document.getElementById('filterStatus').value;
     const prioridade = document.getElementById('filterPrioridade').value;
     const responsavel = document.getElementById('filterResponsavel').value;
-    const data = document.getElementById('filterData').value;
 
     return tarefas.filter(tarefa => {
-        // Busca
         if (termo && !tarefa.titulo.toLowerCase().includes(termo) && 
             !(tarefa.descricao && tarefa.descricao.toLowerCase().includes(termo))) {
             return false;
         }
-        
-        // Filtro de status
-        if (status && tarefa.status !== status) {
-            return false;
-        }
-        
-        // Filtro de prioridade
-        if (prioridade && tarefa.prioridade !== prioridade) {
-            return false;
-        }
-        
-        // Filtro de responsável
-        if (responsavel && tarefa.responsavel !== responsavel) {
-            return false;
-        }
-        
-        // Filtro de data
-        if (data) {
-            if (tarefa.dataInicio > data || tarefa.dataFim < data) {
-                return false;
-            }
-        }
-        
+        if (status && tarefa.status !== status) return false;
+        if (prioridade && tarefa.prioridade !== prioridade) return false;
+        if (responsavel && tarefa.responsavel !== responsavel) return false;
         return true;
     });
 }
@@ -321,8 +299,7 @@ function limparFiltros() {
     document.getElementById('filterStatus').value = '';
     document.getElementById('filterPrioridade').value = '';
     document.getElementById('filterResponsavel').value = '';
-    document.getElementById('filterData').value = '';
-    filtrarTarefas();
+    atualizarListaTarefas();
 }
 
 // Utils
@@ -358,39 +335,16 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-function exportarDados() {
-    const dados = {
-        tarefas: tarefas,
-        metadata: {
-            exportadoEm: new Date().toISOString(),
-            totalTarefas: tarefas.length,
-            versao: '1.0'
-        }
-    };
-    
-    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup-tarefas-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    mostrarNotificacao('Dados exportados com sucesso!', 'success');
-}
+// Event Listeners
+document.getElementById('searchInput').addEventListener('input', atualizarListaTarefas);
+document.getElementById('filterStatus').addEventListener('change', atualizarListaTarefas);
+document.getElementById('filterPrioridade').addEventListener('change', atualizarListaTarefas);
+document.getElementById('filterResponsavel').addEventListener('change', atualizarListaTarefas);
 
-function importarDados() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = e => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = event => {
-            try {
-                const dados = JSON.parse(event.target.result);
-                
-                if (dados.tarefas && Array.isArray(dados.tarefas)) {
-                    if (confirm(`Importar ${dados.tarefas.length} tarefas?
+// Fechar modal clicando fora
+window.onclick = function(event) {
+    const modal = document.getElementById('modalTarefa');
+    if (event.target === modal) {
+        fecharModalTarefa();
+    }
+}

@@ -55,7 +55,7 @@ async function fazerLogin(usuario, senha) {
     }
 }
 
-// CONFIGURAÇÃO MINIMALISTA
+// CONFIGURAÇÃO MINIMALISTA .
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== FORMULÁRIO PRONTO ===');
     

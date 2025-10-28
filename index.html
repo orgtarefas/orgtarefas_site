@@ -8,13 +8,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
+    <!-- Tela de Carregamento -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        <div style="text-align: center;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #0078d4; margin-bottom: 20px;"></i>
+            <p id="loadingText">Carregando sistema...</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
         <!-- Cabeçalho -->
         <header class="header">
             <h1><i class="fas fa-tasks"></i> Sistema de Planejamentos</h1>
             <div class="header-info">
                 <span id="data-atual"></span>
-                <span id="status-sincronizacao"><i class="fas fa-check-circle"></i> Online</span>
+                <span id="status-sincronizacao"><i class="fas fa-sync-alt"></i> Conectando...</span>
                 <div class="user-menu">
                     <span id="userName">Usuário</span>
                     <button class="btn btn-outline btn-sm" onclick="logout()">
@@ -29,27 +37,21 @@
             <button class="btn btn-primary" onclick="abrirModalTarefa()">
                 <i class="fas fa-plus"></i> Nova Tarefa
             </button>
-            <button class="btn btn-secondary" onclick="exportarDados()">
-                <i class="fas fa-download"></i> Exportar
-            </button>
-            <button class="btn btn-secondary" onclick="importarDados()">
-                <i class="fas fa-upload"></i> Importar
-            </button>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Buscar tarefas..." onkeyup="filtrarTarefas()">
+                <input type="text" id="searchInput" placeholder="Buscar tarefas...">
                 <i class="fas fa-search"></i>
             </div>
         </div>
 
         <!-- Filtros -->
         <div class="filters">
-            <select id="filterStatus" onchange="filtrarTarefas()">
+            <select id="filterStatus">
                 <option value="">Todos os Status</option>
                 <option value="pendente">Pendente</option>
                 <option value="andamento">Em Andamento</option>
                 <option value="concluido">Concluído</option>
             </select>
-            <select id="filterPrioridade" onchange="filtrarTarefas()">
+            <select id="filterPrioridade">
                 <option value="">Todas as Prioridades</option>
                 <option value="alta">Alta</option>
                 <option value="media">Média</option>
@@ -58,7 +60,6 @@
             <select id="filterResponsavel">
                 <option value="">Todos os Responsáveis</option>
             </select>
-            <input type="date" id="filterData" onchange="filtrarTarefas()">
             <button class="btn btn-outline" onclick="limparFiltros()">
                 <i class="fas fa-times"></i> Limpar Filtros
             </button>
@@ -75,12 +76,12 @@
                 <p>Pendentes</p>
             </div>
             <div class="stat-card">
-                <h3 id="tarefas-concluidas">0</h3>
-                <p>Concluídas</p>
+                <h3 id="tarefas-andamento">0</h3>
+                <p>Em Andamento</p>
             </div>
             <div class="stat-card">
-                <h3 id="tarefas-atrasadas">0</h3>
-                <p>Atrasadas</p>
+                <h3 id="tarefas-concluidas">0</h3>
+                <p>Concluídas</p>
             </div>
         </div>
 
@@ -104,65 +105,66 @@
                 <h2 id="modalTitulo">Nova Tarefa</h2>
                 <span class="close" onclick="fecharModalTarefa()">&times;</span>
             </div>
-            <form id="formTarefa">
-                <div class="form-group">
-                    <label for="tarefaTitulo">Título *</label>
-                    <input type="text" id="tarefaTitulo" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="tarefaDescricao">Descrição</label>
-                    <textarea id="tarefaDescricao" rows="3"></textarea>
-                </div>
-
-                <div class="form-row">
+            <div class="modal-body">
+                <form id="formTarefa">
                     <div class="form-group">
-                        <label for="tarefaPrioridade">Prioridade</label>
-                        <select id="tarefaPrioridade">
-                            <option value="alta">Alta</option>
-                            <option value="media" selected>Média</option>
-                            <option value="baixa">Baixa</option>
-                        </select>
+                        <label for="tarefaTitulo">Título *</label>
+                        <input type="text" id="tarefaTitulo" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="tarefaStatus">Status</label>
-                        <select id="tarefaStatus">
-                            <option value="pendente">Pendente</option>
-                            <option value="andamento">Em Andamento</option>
-                            <option value="concluido">Concluído</option>
+                        <label for="tarefaDescricao">Descrição</label>
+                        <textarea id="tarefaDescricao" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tarefaPrioridade">Prioridade *</label>
+                            <select id="tarefaPrioridade" required>
+                                <option value="alta">Alta</option>
+                                <option value="media" selected>Média</option>
+                                <option value="baixa">Baixa</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tarefaStatus">Status *</label>
+                            <select id="tarefaStatus" required>
+                                <option value="pendente">Pendente</option>
+                                <option value="andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tarefaDataInicio">Data Início</label>
+                            <input type="date" id="tarefaDataInicio">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tarefaDataFim">Data Vencimento *</label>
+                            <input type="date" id="tarefaDataFim" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tarefaResponsavel">Responsável</label>
+                        <select id="tarefaResponsavel">
+                            <option value="">Selecionar responsável...</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarefaDataInicio">Data Início</label>
-                        <input type="date" id="tarefaDataInicio">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tarefaDataFim">Data Vencimento *</label>
-                        <input type="date" id="tarefaDataFim" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="tarefaResponsavel">Responsável</label>
-                    <select id="tarefaResponsavel">
-                        <option value="">Selecionar responsável...</option>
-                    </select>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="salvarTarefa()">Salvar Tarefa</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarTarefa()">Salvar Tarefa</button>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase -->
+    <!-- Firebase Config -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
@@ -186,6 +188,7 @@
         // Torna global
         window.db = db;
         window.firebase = firebase;
+        window.firebaseReady = true;
     </script>
 
     <script src="script.js"></script>
