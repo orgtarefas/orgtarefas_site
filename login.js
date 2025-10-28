@@ -1,42 +1,16 @@
-// login.js - VERSÃO SIMPLEX SEM LOOPS
-console.log('🔥 Login carregado - Versão Simplex');
+// login.js - VERSÃO ZERO BLOQUEIOS
+console.log('=== LOGIN INICIADO ===');
 
-// Liberação UMA ÚNICA VEZ
-function liberarUmaVez() {
-    console.log('🎯 Liberação única executada');
-    
-    // Apenas os elementos do formulário
-    const elementos = [
-        '#loginUsuario',
-        '#loginPassword', 
-        '#btnLogin',
-        '#loginForm',
-        '.form-group',
-        'label'
-    ];
-    
-    elementos.forEach(seletor => {
-        const els = document.querySelectorAll(seletor);
-        els.forEach(el => {
-            el.style.pointerEvents = 'auto';
-            el.style.cursor = el.tagName === 'INPUT' ? 'text' : 'pointer';
-            el.disabled = false;
-        });
-    });
-    
-    console.log('✅ Elementos liberados');
-}
-
-// Sistema de login
+// Sistema de login DIRETO
 async function fazerLogin(usuario, senha) {
-    console.log(`🔐 Login: "${usuario}"`);
+    console.log('Tentando login:', usuario);
     
     const btnLogin = document.getElementById('btnLogin');
     const btnText = document.getElementById('btnText');
     const spinner = document.getElementById('spinner');
     
     try {
-        if (!usuario.trim() || !senha.trim()) {
+        if (!usuario || !senha) {
             alert('Preencha usuário e senha');
             return;
         }
@@ -51,7 +25,7 @@ async function fazerLogin(usuario, senha) {
         
         const usuarioEncontrado = snapshot.docs.find(doc => {
             const data = doc.data();
-            return data.usuario && data.usuario.toLowerCase() === usuario.toLowerCase().trim();
+            return data.usuario && data.usuario.toLowerCase() === usuario.toLowerCase();
         });
         
         if (!usuarioEncontrado) {
@@ -81,14 +55,11 @@ async function fazerLogin(usuario, senha) {
     }
 }
 
-// Configuração SIMPLES
+// CONFIGURAÇÃO MINIMALISTA
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Carregado');
+    console.log('=== FORMULÁRIO PRONTO ===');
     
-    // Liberação ÚNICA
-    liberarUmaVez();
-    
-    // Configurar formulário
+    // Configurar formulário de forma DIRETA
     const form = document.getElementById('loginForm');
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -99,25 +70,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Configurar cliques nos inputs
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('mousedown', function(e) {
-            this.focus();
-        });
-    });
-    
-    // Focar automaticamente
+    // Focar no campo usuário
     setTimeout(() => {
         const inputUsuario = document.getElementById('loginUsuario');
         if (inputUsuario) {
             inputUsuario.focus();
         }
-    }, 100);
-});
-
-// Apenas UMA liberação extra após carregamento completo
-window.addEventListener('load', function() {
-    console.log('🎉 Página carregada');
-    setTimeout(liberarUmaVez, 200);
+    }, 500);
+    
+    console.log('=== SISTEMA CONFIGURADO ===');
 });
