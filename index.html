@@ -8,180 +8,161 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
+    <!-- Tela de Carregamento -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        <div style="text-align: center;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #0078d4; margin-bottom: 20px;"></i>
+            <p id="loadingText">Verificando autenticação...</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
         <!-- Cabeçalho -->
         <header class="header">
-            <h1><i class="fas fa-tasks"></i> Sistema de Planejamentos</h1>
+            <h1><i class="fas fa-tasks"></i> Sistema de Planejamento</h1>
             <div class="header-info">
                 <span id="data-atual"></span>
-                <span id="status-sincronizacao"><i class="fas fa-check-circle"></i> Local</span>
+                <span id="status-sincronizacao"><i class="fas fa-sync-alt"></i> Conectando...</span>
+                <div class="user-menu">
+                    <span id="userName">Usuário</span>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
             </div>
         </header>
 
-        <!-- Barra de Ferramentas -->
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="abrirModalTarefa()">
-                <i class="fas fa-plus"></i> Nova Tarefa
-            </button>
-            <button class="btn btn-secondary" onclick="exportarDados()">
-                <i class="fas fa-download"></i> Exportar
-            </button>
-            <button class="btn btn-secondary" onclick="importarDados()">
-                <i class="fas fa-upload"></i> Importar
-            </button>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Buscar tarefas..." onkeyup="filtrarTarefas()">
-                <i class="fas fa-search"></i>
+        <!-- Estatísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total de Tarefas</h3>
+                <div class="number" id="total-tarefas">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pendentes</h3>
+                <div class="number" id="tarefas-pendentes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Em Andamento</h3>
+                <div class="number" id="tarefas-andamento">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Concluídas</h3>
+                <div class="number" id="tarefas-concluidas">0</div>
             </div>
         </div>
 
         <!-- Filtros -->
         <div class="filters">
-            <select id="filterStatus" onchange="filtrarTarefas()">
-                <option value="">Todos os Status</option>
-                <option value="pendente">Pendente</option>
-                <option value="em-andamento">Em Andamento</option>
-                <option value="concluido">Concluído</option>
-            </select>
-            <select id="filterPrioridade" onchange="filtrarTarefas()">
-                <option value="">Todas as Prioridades</option>
-                <option value="alta">Alta</option>
-                <option value="media">Média</option>
-                <option value="baixa">Baixa</option>
-            </select>
-            <input type="date" id="filterData" onchange="filtrarTarefas()">
-            <button class="btn btn-outline" onclick="limparFiltros()">
-                <i class="fas fa-times"></i> Limpar Filtros
-            </button>
-        </div>
-
-        <!-- Estatísticas -->
-        <div class="stats">
-            <div class="stat-card">
-                <h3 id="total-tarefas">0</h3>
-                <p>Total de Tarefas</p>
+            <div class="filter-group">
+                <label for="searchInput"><i class="fas fa-search"></i> Buscar</label>
+                <input type="text" id="searchInput" placeholder="Buscar por título ou descrição...">
             </div>
-            <div class="stat-card">
-                <h3 id="tarefas-pendentes">0</h3>
-                <p>Pendentes</p>
+            <div class="filter-group">
+                <label for="filterStatus">Status</label>
+                <select id="filterStatus">
+                    <option value="">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="andamento">Em Andamento</option>
+                    <option value="concluido">Concluído</option>
+                </select>
             </div>
-            <div class="stat-card">
-                <h3 id="tarefas-concluidas">0</h3>
-                <p>Concluídas</p>
+            <div class="filter-group">
+                <label for="filterPrioridade">Prioridade</label>
+                <select id="filterPrioridade">
+                    <option value="">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Média</option>
+                    <option value="baixa">Baixa</option>
+                </select>
             </div>
-            <div class="stat-card">
-                <h3 id="tarefas-atrasadas">0</h3>
-                <p>Atrasadas</p>
+            <div class="filter-group">
+                <label for="filterResponsavel">Responsável</label>
+                <select id="filterResponsavel">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button class="btn btn-primary" onclick="abrirModalTarefa()">
+                    <i class="fas fa-plus"></i> Nova Tarefa
+                </button>
             </div>
         </div>
 
-        <!-- Lista de Tarefas -->
-        <div class="tasks-container">
-            <div id="lista-tarefas" class="tasks-list">
-                <!-- Tarefas serão carregadas aqui dinamicamente -->
-            </div>
-            <div id="mensagem-vazio" class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
+        <!-- Tasks Grid -->
+        <div class="tasks-grid" id="lista-tarefas">
+            <div class="empty-state">
+                <i class="fas fa-tasks"></i>
                 <h3>Nenhuma tarefa encontrada</h3>
                 <p>Clique em "Nova Tarefa" para começar</p>
             </div>
         </div>
     </div>
 
-    <!-- Modal para Adicionar/Editar Tarefa -->
+    <!-- Modal Tarefa -->
     <div id="modalTarefa" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitulo">Nova Tarefa</h2>
-                <span class="close" onclick="fecharModalTarefa()">&times;</span>
+                <button class="close" onclick="fecharModalTarefa()">&times;</button>
             </div>
-            <form id="formTarefa" onsubmit="salvarTarefa(event)">
-                <div class="form-group">
-                    <label for="tarefaTitulo">Título *</label>
-                    <input type="text" id="tarefaTitulo" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="tarefaDescricao">Descrição</label>
-                    <textarea id="tarefaDescricao" rows="3"></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarefaPrioridade">Prioridade</label>
-                        <select id="tarefaPrioridade">
-                            <option value="alta">Alta</option>
-                            <option value="media" selected>Média</option>
-                            <option value="baixa">Baixa</option>
-                        </select>
+            <div class="modal-body">
+                <form id="formTarefa">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="tarefaTitulo">Título *</label>
+                            <input type="text" id="tarefaTitulo" required placeholder="Título da tarefa">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="tarefaDescricao">Descrição</label>
+                            <textarea id="tarefaDescricao" placeholder="Descrição detalhada da tarefa"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="tarefaPrioridade">Prioridade *</label>
+                            <select id="tarefaPrioridade" required>
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tarefaStatus">Status *</label>
+                            <select id="tarefaStatus" required>
+                                <option value="pendente">Pendente</option>
+                                <option value="andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tarefaDataInicio">Data Início</label>
+                            <input type="date" id="tarefaDataInicio">
+                        </div>
+                        <div class="form-group">
+                            <label for="tarefaDataFim">Data Final *</label>
+                            <input type="date" id="tarefaDataFim" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tarefaResponsavel">Responsável</label>
+                            <select id="tarefaResponsavel">
+                                <option value="">Selecionar...</option>
+                            </select>
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="tarefaStatus">Status</label>
-                        <select id="tarefaStatus">
-                            <option value="pendente">Pendente</option>
-                            <option value="em-andamento">Em Andamento</option>
-                            <option value="concluido">Concluído</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarefaDataInicio">Data Início</label>
-                        <input type="date" id="tarefaDataInicio">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tarefaDataFim">Data Vencimento *</label>
-                        <input type="date" id="tarefaDataFim" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="tarefaResponsavel">Responsável</label>
-                    <input type="text" id="tarefaResponsavel" placeholder="Nome do responsável">
-                </div>
-
-                <!-- Subtarefas -->
-                <div class="form-group">
-                    <label>Subtarefas</label>
-                    <div id="lista-subtarefas">
-                        <!-- Subtarefas serão adicionadas aqui -->
-                    </div>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="adicionarSubtarefa()">
-                        <i class="fas fa-plus"></i> Adicionar Subtarefa
-                    </button>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarTarefa()">Salvar Tarefa</button>
+            </div>
         </div>
     </div>
 
-    <!-- Template de Subtarefa (Hidden) -->
-    <template id="templateSubtarefa">
-        <div class="subtarefa-item">
-            <input type="text" class="subtarefa-titulo" placeholder="Título da subtarefa">
-            <input type="date" class="subtarefa-data">
-            <select class="subtarefa-status">
-                <option value="pendente">Pendente</option>
-                <option value="concluido">Concluído</option>
-            </select>
-            <button type="button" class="btn-remove" onclick="removerSubtarefa(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </template>
-
-    <!-- Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-
+    <!-- Firebase CDN direto (mais confiável) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script>
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
             authDomain: "orgtarefas-85358.firebaseapp.com",
@@ -191,16 +172,15 @@
             appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
         
-        // Torna global para o script.js acessar
+        console.log('✅ Firebase inicializado!');
+        
+        // Torna global
         window.db = db;
-        window.firebaseModules = {
-            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
-        };
-        console.log('✅ Firebase configurado!');
+        window.firebase = firebase;
     </script>
 
     <script src="script.js"></script>
