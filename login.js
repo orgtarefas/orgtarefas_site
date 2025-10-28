@@ -1,48 +1,62 @@
-// login.js - VERSÃO SIMPLIFICADA E FUNCIONAL
-console.log('🔥 Login carregado - Versão Simplificada');
+// login.js - VERSÃO ULTRA OTIMIZADA SEM TRAVAMENTO
+console.log('🔥 Login carregado - Versão Otimizada');
 
-// Função para ver TODOS os usuários
-async function verTodosUsuarios() {
-    console.log('🛠️ VERIFICANDO TODOS OS USUÁRIOS NO FIRESTORE...');
+// Remover TODOS os bloqueadores
+function removerBloqueadoresCompletamente() {
+    console.log('🎯 Removendo todos os bloqueadores...');
     
-    try {
-        const { db, firebaseModules: fb } = window.firebaseApp;
-        const usersRef = fb.collection(db, 'usuarios');
-        const snapshot = await fb.getDocs(usersRef);
-        
-        console.log(`📊 TOTAL DE USUÁRIOS: ${snapshot.size}`);
-        
-        if (snapshot.size === 0) {
-            console.log('❌ NENHUM USUÁRIO ENCONTRADO!');
-            console.log('💡 Use o admin.html para criar usuários primeiro');
-            return [];
+    // 1. Remover qualquer overlay bloqueador
+    document.querySelectorAll('*').forEach(element => {
+        const styles = window.getComputedStyle(element);
+        if (
+            styles.pointerEvents === 'none' ||
+            styles.userSelect === 'none' ||
+            element.style.pointerEvents === 'none' ||
+            element.disabled
+        ) {
+            element.style.pointerEvents = 'auto';
+            element.style.userSelect = 'auto';
+            element.style.webkitUserSelect = 'auto';
+            element.disabled = false;
         }
+    });
+    
+    // 2. Configurar inputs especificamente
+    const todosElementos = document.querySelectorAll('*');
+    todosElementos.forEach(el => {
+        el.style.pointerEvents = 'auto';
+        el.style.cursor = 'default';
+        el.style.userSelect = 'auto';
+        el.style.webkitUserSelect = 'auto';
+        el.style.msUserSelect = 'auto';
+        el.style.MozUserSelect = 'auto';
+    });
+    
+    // 3. Inputs com comportamento específico
+    const inputs = document.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.style.pointerEvents = 'auto';
+        input.style.cursor = 'text';
+        input.disabled = false;
+        input.readOnly = false;
         
-        const usuarios = [];
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            console.log('--- USUÁRIO ---');
-            console.log('ID:', doc.id);
-            console.log('Dados:', data);
-            console.log('Usuario field:', data.usuario);
-            console.log('Senha field:', data.senha);
-            console.log('---------------');
-            
-            usuarios.push({
-                id: doc.id,
-                ...data
-            });
-        });
-        
-        return usuarios;
-        
-    } catch (error) {
-        console.error('❌ Erro ao buscar usuários:', error);
-        return [];
-    }
+        // Clonar e substituir para remover event listeners problemáticos
+        const novoInput = input.cloneNode(true);
+        input.parentNode.replaceChild(novoInput, input);
+    });
+    
+    // 4. Botões
+    const botoes = document.querySelectorAll('button');
+    botoes.forEach(botao => {
+        botao.style.pointerEvents = 'auto';
+        botao.style.cursor = 'pointer';
+        botao.disabled = false;
+    });
+    
+    console.log('✅ Todos os bloqueadores removidos!');
 }
 
-// Sistema de login SIMPLES
+// Sistema de login SIMPLES e DIRETO
 async function fazerLogin(usuario, senha) {
     console.log(`🔐 Tentando login: "${usuario}"`);
     
@@ -51,46 +65,48 @@ async function fazerLogin(usuario, senha) {
     const spinner = document.getElementById('spinner');
     
     try {
+        // Validar campos
+        if (!usuario.trim() || !senha.trim()) {
+            alert('Preencha usuário e senha');
+            return;
+        }
+
         // Mostrar loading
         btnLogin.disabled = true;
         btnText.textContent = 'Autenticando...';
         spinner.classList.remove('hidden');
         
-        // Primeiro, ver TODOS os usuários
-        const todosUsuarios = await verTodosUsuarios();
+        // Buscar usuário no Firestore
+        const { db, firebaseModules: fb } = window.firebaseApp;
+        const usersRef = fb.collection(db, 'usuarios');
+        const snapshot = await fb.getDocs(usersRef);
         
-        if (todosUsuarios.length === 0) {
-            throw new Error('Nenhum usuário cadastrado. Use admin.html primeiro.');
-        }
-        
-        // Buscar usuário específico
-        const usuarioEncontrado = todosUsuarios.find(u => 
-            u.usuario && u.usuario.toString().toLowerCase() === usuario.toLowerCase().trim()
-        );
-        
-        console.log('🔍 Resultado da busca:', usuarioEncontrado);
+        // Buscar usuário (case insensitive)
+        const usuarioEncontrado = snapshot.docs.find(doc => {
+            const data = doc.data();
+            return data.usuario && data.usuario.toLowerCase() === usuario.toLowerCase().trim();
+        });
         
         if (!usuarioEncontrado) {
-            const usuariosDisponiveis = todosUsuarios.map(u => u.usuario).filter(Boolean);
-            throw new Error(`Usuário não encontrado. Disponíveis: ${usuariosDisponiveis.join(', ')}`);
+            throw new Error('Usuário não encontrado');
         }
         
+        const userData = usuarioEncontrado.data();
+        
         // Verificar senha
-        if (usuarioEncontrado.senha === senha) {
+        if (userData.senha === senha) {
             console.log('✅ Login bem-sucedido!');
             
             // Salvar sessão
             localStorage.setItem('usuarioLogado', JSON.stringify({
                 uid: usuarioEncontrado.id,
-                usuario: usuarioEncontrado.usuario,
-                nome: usuarioEncontrado.nome || usuarioEncontrado.usuario,
-                nivel: usuarioEncontrado.nivel || 'usuario'
+                usuario: userData.usuario,
+                nome: userData.nome || userData.usuario,
+                nivel: userData.nivel || 'usuario'
             }));
             
             // Redirecionar
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
+            window.location.href = 'index.html';
             
         } else {
             throw new Error('Senha incorreta');
@@ -98,43 +114,78 @@ async function fazerLogin(usuario, senha) {
         
     } catch (error) {
         console.error('❌ Erro no login:', error);
-        alert('ERRO: ' + error.message);
-    } finally {
+        alert('Erro: ' + error.message);
+        
+        // Restaurar botão
         btnLogin.disabled = false;
         btnText.textContent = 'Entrar no Sistema';
         spinner.classList.add('hidden');
     }
 }
 
-// Configuração inicial
+// Configuração INICIAL RÁPIDA
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Sistema carregado');
+    console.log('✅ DOM Carregado - Configurando sistema...');
     
-    // Liberar formulário
-    document.querySelectorAll('input, button').forEach(el => {
-        el.style.pointerEvents = 'auto';
-        el.disabled = false;
-    });
+    // REMOVER BLOQUEADORES IMEDIATAMENTE
+    removerBloqueadoresCompletamente();
     
-    // Configurar formulário
+    // Configurar formulário de forma SIMPLES
     const form = document.getElementById('loginForm');
     if (form) {
-        form.addEventListener('submit', async function(event) {
+        // REMOVER qualquer event listener existente
+        const novoForm = form.cloneNode(true);
+        form.parentNode.replaceChild(novoForm, form);
+        
+        // Adicionar listener SIMPLES
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const usuario = document.getElementById('loginUsuario').value;
             const senha = document.getElementById('loginPassword').value;
-            await fazerLogin(usuario, senha);
+            fazerLogin(usuario, senha);
         });
     }
     
-    // Focar no input
+    // Configurar inputs para serem CLICÁVEIS
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+        });
+        
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.focus();
+        });
+    });
+    
+    // Focar no primeiro input
+    setTimeout(() => {
+        const primeiroInput = document.getElementById('loginUsuario');
+        if (primeiroInput) {
+            primeiroInput.focus();
+        }
+    }, 100);
+});
+
+// REMOÇÃO AGESSIVA CONTÍNUA DE BLOQUEADORES
+setTimeout(removerBloqueadoresCompletamente, 50);
+setTimeout(removerBloqueadoresCompletamente, 200);
+setTimeout(removerBloqueadoresCompletamente, 500);
+setTimeout(removerBloqueadoresCompletamente, 1000);
+setTimeout(removerBloqueadoresCompletamente, 2000);
+
+// Prevenir comportamentos problemáticos
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Quando a página terminar de carregar
+window.addEventListener('load', function() {
+    console.log('🎉 Página totalmente carregada - Sistema liberado!');
+    removerBloqueadoresCompletamente();
+    
+    // Forçar foco novamente
     setTimeout(() => {
         document.getElementById('loginUsuario')?.focus();
-    }, 500);
-    
-    // Verificar usuários automaticamente após 2 segundos
-    setTimeout(async () => {
-        console.log('🔄 Verificando usuários automaticamente...');
-        await verTodosUsuarios();
-    }, 2000);
+    }, 300);
 });
