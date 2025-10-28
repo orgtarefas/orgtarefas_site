@@ -18,6 +18,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* LIBERAR TODOS OS ELEMENTOS */
+    pointer-events: auto !important;
 }
 
 body {
@@ -28,6 +30,9 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    /* LIBERAR O BODY */
+    pointer-events: auto !important;
+    cursor: default !important;
 }
 
 /* Container Principal */
@@ -108,6 +113,9 @@ body {
     font-size: 1rem;
     transition: all 0.3s ease;
     background: var(--light);
+    /* LIBERAR INPUTS */
+    pointer-events: auto !important;
+    cursor: text !important;
 }
 
 .form-group input:focus {
@@ -180,6 +188,9 @@ body {
     justify-content: center;
     gap: 10px;
     position: relative;
+    /* LIBERAR BOTÃO */
+    pointer-events: auto !important;
+    cursor: pointer !important;
 }
 
 .btn-login:hover {
@@ -358,6 +369,7 @@ body {
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    pointer-events: auto !important;
 }
 
 .btn-secondary {
@@ -416,25 +428,19 @@ body {
     border-left-color: var(--warning);
 }
 
-/* FORÇAR LIBERAÇÃO - EMERGÊNCIA */
-* {
-    pointer-events: auto !important;
-}
-
-body {
-    pointer-events: auto !important;
-}
-
-input, button, textarea, select {
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Remover qualquer overlay bloqueador */
+/* REMOVER QUALQUER ELEMENTO BLOQUEADOR INVISÍVEL */
 div[style*="z-index: 9999"],
-div[style*="position: fixed"],
-div[style*="cover"],
-div[style*="blocking"] {
+div[style*="position: fixed"][style*="cover"],
+div[style*="opacity: 0"],
+div[style*="visibility: hidden"] {
     display: none !important;
+}
+
+/* GARANTIR QUE TODOS OS ELEMENTOS DE FORMULÁRIO ESTEJAM ACESSÍVEIS */
+input:not([disabled]), 
+button:not([disabled]), 
+textarea:not([disabled]), 
+select:not([disabled]) {
+    pointer-events: auto !important;
+    cursor: auto !important;
 }
