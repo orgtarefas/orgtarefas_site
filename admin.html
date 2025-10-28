@@ -103,28 +103,29 @@
         </p>
         
         <div class="form-group">
-            <label for="username">Nome de Usuário (Login):</label>
+            <label for="username">Nome de Usuário (Login): *</label>
             <input type="text" id="username" placeholder="nome.usuario" required>
+            <small style="color: #666;">Será usado para fazer login</small>
         </div>
         
         <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" placeholder="admin@empresa.com" required>
+            <label for="email">Email: *</label>
+            <input type="email" id="email" placeholder="usuario@empresa.com" required>
         </div>
         
         <div class="form-group">
-            <label for="password">Senha:</label>
+            <label for="password">Senha: *</label>
             <input type="password" id="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
         </div>
         
         <div class="form-group">
-            <label for="nome">Nome Completo:</label>
+            <label for="nome">Nome Completo: *</label>
             <input type="text" id="nome" placeholder="Nome do usuário" required>
         </div>
         
         <div class="form-group">
-            <label for="hierarquia">Hierarquia:</label>
-            <select id="hierarquia">
+            <label for="nivel">Nível de Acesso: *</label>
+            <select id="nivel" required>
                 <option value="usuario">Usuário</option>
                 <option value="gerente">Gerente</option>
                 <option value="admin">Administrador</option>
@@ -163,7 +164,8 @@
             getDocs,
             query,
             orderBy,
-            updateDoc
+            updateDoc,
+            where
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
         // Configuração do Firebase
@@ -188,13 +190,13 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const nome = document.getElementById('nome').value;
-            const hierarquia = document.getElementById('hierarquia').value;
+            const nivel = document.getElementById('nivel').value;
             const departamento = document.getElementById('departamento').value;
             const resultado = document.getElementById('resultado');
 
             try {
                 // Validar campos
-                if (!username || !email || !password || !nome) {
+                if (!username || !email || !password || !nome || !nivel) {
                     throw new Error('Preencha todos os campos obrigatórios');
                 }
 
@@ -220,7 +222,8 @@
                     username: username,
                     email: email,
                     nome: nome,
-                    hierarquia: hierarquia,
+                    nivel: nivel,
+                    senha: password, // Salvar senha também para login direto
                     departamento: departamento || '',
                     ativo: true,
                     sessionId: null,
@@ -239,7 +242,7 @@
                     <strong>Usuário:</strong> ${username}<br>
                     <strong>Email:</strong> ${email}<br>
                     <strong>Nome:</strong> ${nome}<br>
-                    <strong>Hierarquia:</strong> ${hierarquia}<br>
+                    <strong>Nível:</strong> ${nivel}<br>
                     <strong>Departamento:</strong> ${departamento || 'Não informado'}<br>
                     <strong>UID:</strong> ${user.uid}<br>
                     <small>Coleção: <strong>usuarios</strong></small>
@@ -298,8 +301,8 @@
                         <div style="display: flex; justify-content: between; align-items: start;">
                             <div style="flex: 1;">
                                 <strong>${user.nome}</strong><br>
-                                <small>Usuário: ${user.username} | Email: ${user.email}</small><br>
-                                <small>Hierarquia: <strong>${user.hierarquia}</strong> | 
+                                <small>Usuário: <strong>${user.username}</strong> | Email: ${user.email}</small><br>
+                                <small>Nível: <strong>${user.nivel}</strong> | 
                                 Departamento: ${user.departamento || 'Não informado'}</small>
                             </div>
                             <div style="text-align: right;">

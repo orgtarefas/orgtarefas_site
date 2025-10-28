@@ -27,7 +27,7 @@
         <!-- Conteúdo principal -->
         <div style="padding: 50px; text-align: center;">
             <h2>Sistema Carregado com Sucesso! ✅</h2>
-            <p>O sistema está funcionando. Você será redirecionado para o login.</p>
+            <p id="mensagemUsuario">Bem-vindo ao sistema!</p>
             <button class="btn btn-primary" onclick="window.location.href='login.html'">
                 Ir para Login
             </button>
@@ -35,8 +35,23 @@
     </div>
 
     <script>
-        // Função simples de logout
+        // Verificar se usuário está logado
+        document.addEventListener('DOMContentLoaded', function() {
+            const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+            
+            if (usuarioLogado) {
+                document.getElementById('userName').textContent = usuarioLogado.nome;
+                document.getElementById('mensagemUsuario').textContent = 
+                    `Bem-vindo, ${usuarioLogado.nome}! (${usuarioLogado.nivel})`;
+            } else {
+                document.getElementById('mensagemUsuario').textContent = 
+                    'Você não está logado. Faça login para acessar o sistema.';
+            }
+        });
+
+        // Função de logout
         function logout() {
+            localStorage.removeItem('usuarioLogado');
             window.location.href = 'login.html';
         }
         
