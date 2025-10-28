@@ -99,28 +99,23 @@
     <div class="container">
         <h1>👥 Configurar Usuários do Sistema</h1>
         <p style="text-align: center; color: #666; margin-bottom: 30px;">
-            Usando coleção: <strong>usuarios</strong>
+            Usando coleção: <strong>usuarios</strong> | Campo: <strong>usuario</strong>
         </p>
         
         <div class="form-group">
-            <label for="username">Nome de Usuário (Login): *</label>
-            <input type="text" id="username" placeholder="nome.usuario" required>
-            <small style="color: #666;">Será usado para fazer login</small>
+            <label for="usuario">Nome de Usuário (Login): *</label>
+            <input type="text" id="usuario" placeholder="usuario" required>
+            <small style="color: #666;">Será usado para fazer login (campo "usuario" no Firebase)</small>
         </div>
         
         <div class="form-group">
-            <label for="email">Email: *</label>
-            <input type="email" id="email" placeholder="usuario@empresa.com" required>
+            <label for="senha">Senha: *</label>
+            <input type="password" id="senha" placeholder="senha123" minlength="3" required>
         </div>
         
         <div class="form-group">
-            <label for="password">Senha: *</label>
-            <input type="password" id="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="nome">Nome Completo: *</label>
-            <input type="text" id="nome" placeholder="Nome do usuário" required>
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" placeholder="Nome do usuário">
         </div>
         
         <div class="form-group">
@@ -133,8 +128,8 @@
         </div>
 
         <div class="form-group">
-            <label for="departamento">Departamento:</label>
-            <input type="text" id="departamento" placeholder="Ex: TI, Vendas, RH">
+            <label for="email">Email (opcional):</label>
+            <input type="email" id="email" placeholder="usuario@empresa.com">
         </div>
         
         <button onclick="criarUsuario()">Criar Usuário</button>
@@ -151,10 +146,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword 
-        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
@@ -179,59 +170,51 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
         // Carregar usuários existentes
         carregarUsuarios();
 
         window.criarUsuario = async function() {
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
             const nome = document.getElementById('nome').value;
             const nivel = document.getElementById('nivel').value;
-            const departamento = document.getElementById('departamento').value;
+            const email = document.getElementById('email').value;
             const resultado = document.getElementById('resultado');
 
             try {
                 // Validar campos
-                if (!username || !email || !password || !nome || !nivel) {
-                    throw new Error('Preencha todos os campos obrigatórios');
+                if (!usuario || !senha || !nivel) {
+                    throw new Error('Preencha usuário, senha e nível');
                 }
 
-                if (password.length < 6) {
-                    throw new Error('A senha deve ter pelo menos 6 caracteres');
-                }
-
-                // Verificar se username já existe
+                // Verificar se usuário já existe
                 const usersRef = collection(db, "usuarios");
-                const q = query(usersRef, where("username", "==", username));
+                const q = query(usersRef, where("usuario", "==", usuario));
                 const querySnapshot = await getDocs(q);
                 
                 if (!querySnapshot.empty) {
                     throw new Error('Nome de usuário já está em uso');
                 }
 
-                // 1. Criar usuário no Firebase Authentication
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+                // Criar documento na coleção "usuarios" no Firestore
+                // SEM Firebase Auth - apenas Firestore
+                const novoUsuarioRef = doc(collection(db, "usuarios"));
                 
-                // 2. Criar documento na coleção "usuarios" no Firestore
-                await setDoc(doc(db, "usuarios", user.uid), {
-                    username: username,
-                    email: email,
-                    nome: nome,
+                await setDoc(novoUsuarioRef, {
+                    usuario: usuario,
+                    senha: senha,
+                    nome: nome || usuario,
                     nivel: nivel,
-                    senha: password, // Salvar senha também para login direto
-                    departamento: departamento || '',
+                    email: email || '',
                     ativo: true,
-                    sessionId: null,
+                    sessaoAtiva: null,
+                    sessoesAtivas: 0,
                     ultimoLogin: null,
-                    sessaoExpiraEm: null,
                     dataCriacao: serverTimestamp(),
-                    criadoPor: "admin",
-                    ultimaAtualizacao: serverTimestamp()
+                    dataExpiracao: null,
+                    criadoPor: "admin"
                 });
 
                 // Mostrar resultado
@@ -239,21 +222,20 @@
                 resultado.className = 'result success';
                 resultado.innerHTML = `
                     <strong>✅ Usuário criado com sucesso!</strong><br>
-                    <strong>Usuário:</strong> ${username}<br>
-                    <strong>Email:</strong> ${email}<br>
-                    <strong>Nome:</strong> ${nome}<br>
+                    <strong>Usuário:</strong> ${usuario}<br>
+                    <strong>Senha:</strong> ${senha}<br>
+                    <strong>Nome:</strong> ${nome || usuario}<br>
                     <strong>Nível:</strong> ${nivel}<br>
-                    <strong>Departamento:</strong> ${departamento || 'Não informado'}<br>
-                    <strong>UID:</strong> ${user.uid}<br>
-                    <small>Coleção: <strong>usuarios</strong></small>
+                    <strong>Email:</strong> ${email || 'Não informado'}<br>
+                    <strong>ID:</strong> ${novoUsuarioRef.id}<br>
+                    <small>Coleção: <strong>usuarios</strong> | Campo: <strong>usuario</strong></small>
                 `;
                 
                 // Limpar campos
-                document.getElementById('username').value = '';
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
+                document.getElementById('usuario').value = '';
+                document.getElementById('senha').value = '';
                 document.getElementById('nome').value = '';
-                document.getElementById('departamento').value = '';
+                document.getElementById('email').value = '';
                 
                 // Atualizar lista
                 carregarUsuarios();
@@ -262,16 +244,7 @@
                 console.error('Erro:', error);
                 resultado.style.display = 'block';
                 resultado.className = 'result error';
-                
-                if (error.code === 'auth/email-already-in-use') {
-                    resultado.innerHTML = '❌ Este email já está em uso.';
-                } else if (error.code === 'auth/invalid-email') {
-                    resultado.innerHTML = '❌ Email inválido.';
-                } else if (error.code === 'auth/weak-password') {
-                    resultado.innerHTML = '❌ Senha muito fraca. Use pelo menos 6 caracteres.';
-                } else {
-                    resultado.innerHTML = `❌ Erro: ${error.message}`;
-                }
+                resultado.innerHTML = `❌ Erro: ${error.message}`;
             }
         };
 
@@ -300,10 +273,10 @@
                     userItem.innerHTML = `
                         <div style="display: flex; justify-content: between; align-items: start;">
                             <div style="flex: 1;">
-                                <strong>${user.nome}</strong><br>
-                                <small>Usuário: <strong>${user.username}</strong> | Email: ${user.email}</small><br>
+                                <strong>${user.nome || user.usuario}</strong><br>
+                                <small>Usuário: <strong>${user.usuario}</strong> | Senha: ${user.senha ? '***' : 'não definida'}</small><br>
                                 <small>Nível: <strong>${user.nivel}</strong> | 
-                                Departamento: ${user.departamento || 'Não informado'}</small>
+                                Email: ${user.email || 'Não informado'}</small>
                             </div>
                             <div style="text-align: right;">
                                 <span class="status-${user.ativo ? 'ativo' : 'inativo'}">
@@ -312,7 +285,7 @@
                             </div>
                         </div>
                         <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                            Criado em: ${dataCriacao} | UID: ${doc.id}
+                            Criado em: ${dataCriacao} | ID: ${doc.id}
                         </div>
                     `;
                     lista.appendChild(userItem);

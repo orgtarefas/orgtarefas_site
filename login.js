@@ -1,5 +1,5 @@
-// login.js - SISTEMA DE LOGIN COM USUÁRIO CORRIGIDO
-console.log('🔥 Login carregado - Sistema com usuário');
+// login.js - SISTEMA CORRIGIDO PARA SUA ESTRUTURA
+console.log('🔥 Login carregado - Buscando por campo "usuario"');
 
 // Estado do formulário
 let formularioLiberado = false;
@@ -99,7 +99,7 @@ setTimeout(liberarFormularioCompletamente, 100);
 setTimeout(liberarFormularioCompletamente, 500);
 setTimeout(liberarFormularioCompletamente, 1000);
 
-// Sistema de login
+// Sistema de login CORRIGIDO - busca por "usuario"
 async function fazerLogin(usuario, senha) {
     const btnLogin = document.getElementById('btnLogin');
     const btnText = document.getElementById('btnText');
@@ -116,12 +116,14 @@ async function fazerLogin(usuario, senha) {
         btnText.textContent = 'Autenticando...';
         spinner.classList.remove('hidden');
         
-        console.log('🔍 Buscando usuário:', usuario);
+        console.log('🔍 Buscando usuário no Firestore:', usuario);
         
-        // Buscar usuário no Firestore
+        // Buscar usuário no Firestore pelo campo "usuario"
         const { db, firebaseModules: fb } = window.firebaseApp;
         const usersRef = fb.collection(db, 'usuarios');
-        const q = fb.query(usersRef, fb.where("username", "==", usuario));
+        
+        // CORREÇÃO: Buscar pelo campo "usuario" em vez de "username"
+        const q = fb.query(usersRef, fb.where("usuario", "==", usuario));
         const querySnapshot = await fb.getDocs(q);
         
         console.log('📊 Resultados encontrados:', querySnapshot.size);
@@ -134,68 +136,44 @@ async function fazerLogin(usuario, senha) {
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data();
         
-        console.log('👤 Dados do usuário:', userData);
+        console.log('👤 Dados do usuário encontrado:', userData);
         
+        // Verificar se usuário está ativo
         if (userData.ativo === false) {
             throw new Error('Usuário inativo. Contate o administrador.');
         }
         
-        // VERIFICAR SENHA DIRETAMENTE (já que você tem campo senha)
+        // VERIFICAR SENHA - campo "senha"
+        console.log('🔐 Verificando senha...');
+        console.log('Senha digitada:', senha);
+        console.log('Senha no banco:', userData.senha);
+        
         if (userData.senha && userData.senha === senha) {
-            console.log('✅ Login bem-sucedido via senha direta');
+            console.log('✅ Login bem-sucedido! Senha correta.');
             
             // Salvar sessão local
             localStorage.setItem('usuarioLogado', JSON.stringify({
                 uid: userDoc.id,
-                username: userData.username,
-                nome: userData.nome,
-                nivel: userData.nivel,
-                email: userData.email
+                usuario: userData.usuario,
+                nome: userData.nome || userData.usuario,
+                nivel: userData.nivel || 'usuario',
+                email: userData.email || '',
+                sessaoAtiva: userData.sessaoAtiva
             }));
             
-            // Redirecionar
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        // Se não tem senha direta, tentar Firebase Auth
-        if (userData.email) {
-            console.log('🔐 Tentando Firebase Auth com email:', userData.email);
+            // Mostrar sucesso
+            mostrarSucessoLogin(`Bem-vindo, ${userData.usuario}!`);
             
-            try {
-                const userCredential = await fb.signInWithEmailAndPassword(
-                    window.firebaseApp.auth, 
-                    userData.email, 
-                    senha
-                );
-                
-                console.log('✅ Login Firebase bem-sucedido:', userData.nome);
-                
-                // Salvar sessão
-                localStorage.setItem('usuarioLogado', JSON.stringify({
-                    uid: userCredential.user.uid,
-                    username: userData.username,
-                    nome: userData.nome,
-                    nivel: userData.nivel,
-                    email: userData.email
-                }));
-                
-                // Atualizar último login
-                await fb.updateDoc(fb.doc(db, "usuarios", userDoc.id), {
-                    ultimoLogin: fb.serverTimestamp()
-                });
-                
-                // Redirecionar
+            // Redirecionar após 1 segundo
+            setTimeout(() => {
                 window.location.href = 'index.html';
-                return;
-                
-            } catch (authError) {
-                console.error('❌ Erro Firebase Auth:', authError);
-                throw new Error('Senha incorreta');
-            }
+            }, 1000);
+            
+            return;
+        } else {
+            console.log('❌ Senha incorreta');
+            throw new Error('Senha incorreta');
         }
-        
-        throw new Error('Credenciais inválidas');
         
     } catch (error) {
         console.error('❌ Erro no login:', error);
@@ -203,7 +181,7 @@ async function fazerLogin(usuario, senha) {
         let mensagemErro = 'Erro ao fazer login';
         if (error.message.includes('não encontrado')) {
             mensagemErro = 'Usuário não encontrado';
-        } else if (error.message.includes('Senha incorreta') || error.message.includes('Credenciais inválidas')) {
+        } else if (error.message.includes('Senha incorreta')) {
             mensagemErro = 'Senha incorreta';
         } else if (error.message.includes('inativo')) {
             mensagemErro = error.message;
@@ -259,6 +237,42 @@ function mostrarErroLogin(mensagem) {
     setTimeout(() => {
         notificacao.style.display = 'none';
     }, 5000);
+}
+
+function mostrarSucessoLogin(mensagem) {
+    let notificacao = document.getElementById('notificacaoSucesso');
+    
+    if (!notificacao) {
+        notificacao = document.createElement('div');
+        notificacao.id = 'notificacaoSucesso';
+        notificacao.className = 'notificacao success';
+        notificacao.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            z-index: 10000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        document.body.appendChild(notificacao);
+    }
+    
+    notificacao.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <strong>Sucesso!</strong> ${mensagem}
+    `;
+    
+    notificacao.style.display = 'block';
+    
+    // Auto-remover após 3 segundos
+    setTimeout(() => {
+        notificacao.style.display = 'none';
+    }, 3000);
 }
 
 function fecharModalBloqueio() {
