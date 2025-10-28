@@ -8,8 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-
-    <div class="container" id="mainContent">
+    <div class="container">
         <!-- Cabeçalho -->
         <header class="header">
             <h1><i class="fas fa-tasks"></i> Sistema de Planejamentos</h1>
@@ -18,242 +17,31 @@
                 <span id="status-sincronizacao"><i class="fas fa-check-circle"></i> Local</span>
                 <div class="user-menu">
                     <span id="userName">Usuário</span>
-                    <button class="btn btn-outline btn-sm" onclick="window.logout()">
+                    <button class="btn btn-outline btn-sm" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i> Sair
                     </button>
                 </div>
             </div>
         </header>
 
-        <!-- Barra de Ferramentas -->
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="abrirModalTarefa()">
-                <i class="fas fa-plus"></i> Nova Tarefa
+        <!-- Conteúdo principal -->
+        <div style="padding: 50px; text-align: center;">
+            <h2>Sistema Carregado com Sucesso! ✅</h2>
+            <p>O sistema está funcionando. Você será redirecionado para o login.</p>
+            <button class="btn btn-primary" onclick="window.location.href='login.html'">
+                Ir para Login
             </button>
-            <button class="btn btn-secondary" onclick="exportarDados()">
-                <i class="fas fa-download"></i> Exportar
-            </button>
-            <button class="btn btn-secondary" onclick="importarDados()">
-                <i class="fas fa-upload"></i> Importar
-            </button>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Buscar tarefas..." onkeyup="filtrarTarefas()">
-                <i class="fas fa-search"></i>
-            </div>
-        </div>
-
-        <!-- Filtros -->
-        <div class="filters">
-            <select id="filterStatus" onchange="filtrarTarefas()">
-                <option value="">Todos os Status</option>
-                <option value="pendente">Pendente</option>
-                <option value="em-andamento">Em Andamento</option>
-                <option value="concluido">Concluído</option>
-            </select>
-            <select id="filterPrioridade" onchange="filtrarTarefas()">
-                <option value="">Todas as Prioridades</option>
-                <option value="alta">Alta</option>
-                <option value="media">Média</option>
-                <option value="baixa">Baixa</option>
-            </select>
-            <input type="date" id="filterData" onchange="filtrarTarefas()">
-            <button class="btn btn-outline" onclick="limparFiltros()">
-                <i class="fas fa-times"></i> Limpar Filtros
-            </button>
-        </div>
-
-        <!-- Estatísticas -->
-        <div class="stats">
-            <div class="stat-card">
-                <h3 id="total-tarefas">0</h3>
-                <p>Total de Tarefas</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="tarefas-pendentes">0</h3>
-                <p>Pendentes</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="tarefas-concluidas">0</h3>
-                <p>Concluídas</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="tarefas-atrasadas">0</h3>
-                <p>Atrasadas</p>
-            </div>
-        </div>
-
-        <!-- Lista de Tarefas -->
-        <div class="tasks-container">
-            <div id="lista-tarefas" class="tasks-list">
-                <!-- Tarefas serão carregadas aqui dinamicamente -->
-            </div>
-            <div id="mensagem-vazio" class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>Nenhuma tarefa encontrada</h3>
-                <p>Clique em "Nova Tarefa" para começar</p>
-            </div>
         </div>
     </div>
 
-    <!-- Modal para Adicionar/Editar Tarefa -->
-    <div id="modalTarefa" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitulo">Nova Tarefa</h2>
-                <span class="close" onclick="fecharModalTarefa()">&times;</span>
-            </div>
-            <form id="formTarefa" onsubmit="salvarTarefa(event)">
-                <div class="form-group">
-                    <label for="tarefaTitulo">Título *</label>
-                    <input type="text" id="tarefaTitulo" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="tarefaDescricao">Descrição</label>
-                    <textarea id="tarefaDescricao" rows="3"></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarefaPrioridade">Prioridade</label>
-                        <select id="tarefaPrioridade">
-                            <option value="alta">Alta</option>
-                            <option value="media" selected>Média</option>
-                            <option value="baixa">Baixa</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tarefaStatus">Status</label>
-                        <select id="tarefaStatus">
-                            <option value="pendente">Pendente</option>
-                            <option value="em-andamento">Em Andamento</option>
-                            <option value="concluido">Concluído</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarefaDataInicio">Data Início</label>
-                        <input type="date" id="tarefaDataInicio">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tarefaDataFim">Data Vencimento *</label>
-                        <input type="date" id="tarefaDataFim" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="tarefaResponsavel">Responsável</label>
-                    <input type="text" id="tarefaResponsavel" placeholder="Nome do responsável">
-                </div>
-
-                <!-- Subtarefas -->
-                <div class="form-group">
-                    <label>Subtarefas</label>
-                    <div id="lista-subtarefas">
-                        <!-- Subtarefas serão adicionadas aqui -->
-                    </div>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="adicionarSubtarefa()">
-                        <i class="fas fa-plus"></i> Adicionar Subtarefa
-                    </button>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Template de Subtarefa (Hidden) -->
-    <template id="templateSubtarefa">
-        <div class="subtarefa-item">
-            <input type="text" class="subtarefa-titulo" placeholder="Título da subtarefa">
-            <input type="date" class="subtarefa-data">
-            <select class="subtarefa-status">
-                <option value="pendente">Pendente</option>
-                <option value="concluido">Concluído</option>
-            </select>
-            <button type="button" class="btn-remove" onclick="removerSubtarefa(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </template>
-
-    <!-- Firebase ÚNICO - Combina Auth + Firestore -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-
-        // Configuração ÚNICA do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
-            authDomain: "orgtarefas-85358.firebaseapp.com",
-            projectId: "orgtarefas-85358",
-            storageBucket: "orgtarefas-85358.firebasestorage.app",
-            messagingSenderId: "1023569488575",
-            appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    <script>
+        // Função simples de logout
+        function logout() {
+            window.location.href = 'login.html';
+        }
         
-        console.log('✅ Firebase configurado!');
-
-        // === PARTE DE AUTENTICAÇÃO ===
-        // Verificar autenticação
-        onAuthStateChanged(auth, (user) => {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const mainContent = document.getElementById('mainContent');
-            
-            if (!user) {
-                console.log('🔒 Usuário não autenticado, redirecionando...');
-                window.location.href = 'login.html';
-            } else {
-                console.log('👤 Usuário autenticado:', user.email);
-                document.getElementById('userName').textContent = user.email;
-                
-                // Esconder loading e mostrar conteúdo
-                loadingScreen.style.display = 'none';
-                mainContent.style.display = 'block';
-                
-                // Inicializar sistema após autenticação
-                if (window.inicializarSistema) {
-                    window.inicializarSistema();
-                }
-            }
-        });
-        
-        // Função de logout global
-        window.logout = async function() {
-            try {
-                console.log('🔒 Executando logout...');
-                await signOut(auth);
-                console.log('✅ Logout realizado');
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('❌ Erro no logout:', error);
-                // Mesmo com erro, redireciona para login
-                window.location.href = 'login.html';
-            }
-        };
-
-        // === PARTE DO FIRESTORE (Tarefas) ===
-        // Torna global para o script.js acessar
-        window.db = db;
-        window.firebaseModules = {
-            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
-        };
-        window.auth = auth;
+        // Data atual
+        document.getElementById('data-atual').textContent = new Date().toLocaleDateString('pt-BR');
     </script>
-
-    <script src="script.js"></script>
 </body>
 </html>
