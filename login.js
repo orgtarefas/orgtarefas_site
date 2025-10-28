@@ -1,5 +1,5 @@
-// login.js - SISTEMA CORRIGIDO PARA SUA ESTRUTURA
-console.log('🔥 Login carregado - Buscando por campo "usuario"');
+// login.js - VERSÃO DEBUG E CORREÇÃO COMPLETA
+console.log('🔥 Login carregado - Versão debug');
 
 // Estado do formulário
 let formularioLiberado = false;
@@ -30,15 +30,6 @@ function liberarFormularioCompletamente() {
         input.parentNode.replaceChild(newInput, input);
     });
     
-    // Configurar foco e clique
-    document.addEventListener('click', function(e) {
-        e.stopPropagation();
-    }, true);
-    
-    document.addEventListener('mousedown', function(e) {
-        e.stopPropagation();
-    }, true);
-    
     formularioLiberado = true;
     console.log('✅ Formulário completamente liberado!');
 }
@@ -66,40 +57,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Configurar inputs para manter foco
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            console.log('🎯 Input em foco:', this.id);
-        });
-        
-        input.addEventListener('blur', function() {
-            console.log('🔘 Input perdeu foco:', this.id);
-        });
-        
-        input.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log('🖱️ Input clicado:', this.id);
-        });
-    });
-    
     // Focar no primeiro campo
     setTimeout(() => {
         const primeiroInput = document.getElementById('loginUsuario');
         if (primeiroInput) {
             primeiroInput.focus();
             primeiroInput.select();
-            console.log('🎯 Foco definido no primeiro input');
         }
     }, 500);
 });
 
-// Fallback agressivo - liberar tudo
-setTimeout(liberarFormularioCompletamente, 100);
-setTimeout(liberarFormularioCompletamente, 500);
-setTimeout(liberarFormularioCompletamente, 1000);
-
-// Sistema de login CORRIGIDO - busca por "usuario"
+// Sistema de login CORRIGIDO - com debug completo
 async function fazerLogin(usuario, senha) {
     const btnLogin = document.getElementById('btnLogin');
     const btnText = document.getElementById('btnText');
@@ -116,40 +84,70 @@ async function fazerLogin(usuario, senha) {
         btnText.textContent = 'Autenticando...';
         spinner.classList.remove('hidden');
         
-        console.log('🔍 Buscando usuário no Firestore:', usuario);
+        console.log('🔍 Iniciando busca no Firestore...');
+        console.log('Usuário buscado:', usuario);
         
-        // Buscar usuário no Firestore pelo campo "usuario"
+        // Buscar TODOS os usuários para debug
         const { db, firebaseModules: fb } = window.firebaseApp;
         const usersRef = fb.collection(db, 'usuarios');
         
-        // CORREÇÃO: Buscar pelo campo "usuario" em vez de "username"
+        console.log('📊 Buscando TODOS os usuários...');
+        const allUsersQuery = fb.query(usersRef);
+        const allUsersSnapshot = await fb.getDocs(allUsersQuery);
+        
+        console.log('Total de usuários na coleção:', allUsersSnapshot.size);
+        
+        // Mostrar todos os usuários encontrados
+        allUsersSnapshot.forEach((doc) => {
+            const userData = doc.data();
+            console.log('--- Usuário encontrado ---');
+            console.log('ID:', doc.id);
+            console.log('Dados:', userData);
+            console.log('Campo "usuario":', userData.usuario);
+            console.log('Campo "senha":', userData.senha);
+            console.log('-------------------');
+        });
+        
+        // Agora buscar pelo usuário específico
+        console.log(`🔎 Buscando usuário específico: "${usuario}"`);
         const q = fb.query(usersRef, fb.where("usuario", "==", usuario));
         const querySnapshot = await fb.getDocs(q);
         
-        console.log('📊 Resultados encontrados:', querySnapshot.size);
+        console.log('Resultados da busca específica:', querySnapshot.size);
         
         if (querySnapshot.empty) {
-            throw new Error('Usuário não encontrado');
+            console.log('❌ Nenhum usuário encontrado com esse nome');
+            // Mostrar sugestões baseadas nos usuários existentes
+            const sugestoes = [];
+            allUsersSnapshot.forEach((doc) => {
+                const userData = doc.data();
+                if (userData.usuario) {
+                    sugestoes.push(userData.usuario);
+                }
+            });
+            console.log('Sugestões de usuários existentes:', sugestoes);
+            throw new Error(`Usuário "${usuario}" não encontrado. Usuários disponíveis: ${sugestoes.join(', ') || 'nenhum'}`);
         }
         
         // Pegar o primeiro usuário encontrado
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data();
         
-        console.log('👤 Dados do usuário encontrado:', userData);
+        console.log('✅ Usuário encontrado!');
+        console.log('Dados completos:', userData);
         
         // Verificar se usuário está ativo
         if (userData.ativo === false) {
             throw new Error('Usuário inativo. Contate o administrador.');
         }
         
-        // VERIFICAR SENHA - campo "senha"
+        // VERIFICAR SENHA
         console.log('🔐 Verificando senha...');
         console.log('Senha digitada:', senha);
         console.log('Senha no banco:', userData.senha);
         
         if (userData.senha && userData.senha === senha) {
-            console.log('✅ Login bem-sucedido! Senha correta.');
+            console.log('✅ Senha correta! Login bem-sucedido.');
             
             // Salvar sessão local
             localStorage.setItem('usuarioLogado', JSON.stringify({
@@ -178,21 +176,8 @@ async function fazerLogin(usuario, senha) {
     } catch (error) {
         console.error('❌ Erro no login:', error);
         
-        let mensagemErro = 'Erro ao fazer login';
-        if (error.message.includes('não encontrado')) {
-            mensagemErro = 'Usuário não encontrado';
-        } else if (error.message.includes('Senha incorreta')) {
-            mensagemErro = 'Senha incorreta';
-        } else if (error.message.includes('inativo')) {
-            mensagemErro = error.message;
-        } else if (error.message.includes('Preencha')) {
-            mensagemErro = error.message;
-        } else {
-            mensagemErro = error.message || 'Erro desconhecido';
-        }
-        
         // Mostrar erro de forma visível
-        mostrarErroLogin(mensagemErro);
+        mostrarErroLogin(error.message);
         
     } finally {
         // Restaurar botão
@@ -209,7 +194,6 @@ function mostrarErroLogin(mensagem) {
     if (!notificacao) {
         notificacao = document.createElement('div');
         notificacao.id = 'notificacaoErro';
-        notificacao.className = 'notificacao error';
         notificacao.style.cssText = `
             position: fixed;
             top: 20px;
@@ -222,21 +206,22 @@ function mostrarErroLogin(mensagem) {
             z-index: 10000;
             max-width: 400px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         `;
         document.body.appendChild(notificacao);
     }
     
     notificacao.innerHTML = `
         <i class="fas fa-exclamation-triangle"></i>
-        <strong>Erro:</strong> ${mensagem}
+        <strong>Erro no Login:</strong> ${mensagem}
     `;
     
     notificacao.style.display = 'block';
     
-    // Auto-remover após 5 segundos
+    // Auto-remover após 8 segundos (mais tempo para ler)
     setTimeout(() => {
         notificacao.style.display = 'none';
-    }, 5000);
+    }, 8000);
 }
 
 function mostrarSucessoLogin(mensagem) {
@@ -245,7 +230,6 @@ function mostrarSucessoLogin(mensagem) {
     if (!notificacao) {
         notificacao = document.createElement('div');
         notificacao.id = 'notificacaoSucesso';
-        notificacao.className = 'notificacao success';
         notificacao.style.cssText = `
             position: fixed;
             top: 20px;
@@ -258,6 +242,7 @@ function mostrarSucessoLogin(mensagem) {
             z-index: 10000;
             max-width: 400px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         `;
         document.body.appendChild(notificacao);
     }
@@ -269,7 +254,6 @@ function mostrarSucessoLogin(mensagem) {
     
     notificacao.style.display = 'block';
     
-    // Auto-remover após 3 segundos
     setTimeout(() => {
         notificacao.style.display = 'none';
     }, 3000);
@@ -279,14 +263,14 @@ function fecharModalBloqueio() {
     document.getElementById('blockedModal').style.display = 'none';
 }
 
-// Prevenir qualquer comportamento padrão que possa travar
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('dragstart', e => e.preventDefault());
-document.addEventListener('selectstart', e => e.preventDefault());
+// Fallback agressivo - liberar tudo
+setTimeout(liberarFormularioCompletamente, 100);
+setTimeout(liberarFormularioCompletamente, 500);
+setTimeout(liberarFormularioCompletamente, 1000);
 
 // Forçar foco no formulário
 window.addEventListener('load', function() {
-    console.log('🔄 Página completamente carregada - forçando liberação final');
+    console.log('🔄 Página completamente carregada');
     liberarFormularioCompletamente();
     
     setTimeout(() => {
