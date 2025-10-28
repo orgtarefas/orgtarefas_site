@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Planejamento</title>
+    <link rel="stylesheet" href="login.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-tasks"></i>
+                <h1>Sistema de Planejamento</h1>
+                <p>Acesso Restrito</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-user-tie"></i> Email Profissional
+                    </label>
+                    <input type="email" id="loginEmail" required placeholder="seu.email@empresa.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i> Senha
+                    </label>
+                    <input type="password" id="loginPassword" required placeholder="Sua senha">
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        Lembrar-me
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span id="btnText">Entrar no Sistema</span>
+                    <div class="spinner hidden" id="spinner"></div>
+                </button>
+
+                <div class="login-footer">
+                    <p><i class="fas fa-shield-alt"></i> Sistema seguro - Acesso monitorado</p>
+                </div>
+            </form>
+
+            <!-- Modal de Bloqueio -->
+            <div id="blockedModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header error">
+                        <i class="fas fa-ban"></i>
+                        <h3>Acesso Bloqueado</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p id="blockedMessage">Seu acesso está temporariamente bloqueado.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="fecharModalBloqueio()">Entendi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-background">
+            <div class="background-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            updateDoc, 
+            serverTimestamp,
+            query,
+            where,
+            getDocs,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            signOut,
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
+            authDomain: "orgtarefas-85358.firebaseapp.com",
+            projectId: "orgtarefas-85358",
+            storageBucket: "orgtarefas-85358.firebasestorage.app",
+            messagingSenderId: "1023569488575",
+            appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Torna global para o login.js acessar
+        window.firebaseApp = {
+            db, auth, firebaseModules: {
+                collection, doc, getDoc, setDoc, updateDoc, serverTimestamp,
+                query, where, getDocs, onSnapshot,
+                signInWithEmailAndPassword, signOut, onAuthStateChanged
+            }
+        };
+        console.log('✅ Firebase Login configurado!');
+    </script>
+
+    <script src="login.js"></script>
+</body>
+</html>

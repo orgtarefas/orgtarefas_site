@@ -1,0 +1,76 @@
+/* User Menu */
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+}
+
+.user-menu span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.user-menu .btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.user-menu .btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+
+/* Notificações */
+.notificacao {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--success);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 1001;
+    max-width: 400px;
+}
+
+.notificacao.show {
+    transform: translateX(0);
+}
+
+.notificacao.error {
+    border-left-color: var(--danger);
+}
+
+.notificacao.warning {
+    border-left-color: var(--warning);
+}
+
+.notificacao i {
+    font-size: 1.2rem;
+}
+
+/* Responsivo para user-menu */
+@media (max-width: 768px) {
+    .header-info {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .user-menu {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+}
