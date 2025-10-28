@@ -103,6 +103,11 @@
         </p>
         
         <div class="form-group">
+            <label for="username">Nome de Usuário (Login):</label>
+            <input type="text" id="username" placeholder="nome.usuario" required>
+        </div>
+        
+        <div class="form-group">
             <label for="email">Email:</label>
             <input type="email" id="email" placeholder="admin@empresa.com" required>
         </div>
@@ -161,7 +166,7 @@
             updateDoc
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-        // Configuração do Firebase - MESMA do seu projeto
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
             authDomain: "orgtarefas-85358.firebaseapp.com",
@@ -179,6 +184,7 @@
         carregarUsuarios();
 
         window.criarUsuario = async function() {
+            const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const nome = document.getElementById('nome').value;
@@ -188,7 +194,7 @@
 
             try {
                 // Validar campos
-                if (!email || !password || !nome) {
+                if (!username || !email || !password || !nome) {
                     throw new Error('Preencha todos os campos obrigatórios');
                 }
 
@@ -196,12 +202,22 @@
                     throw new Error('A senha deve ter pelo menos 6 caracteres');
                 }
 
+                // Verificar se username já existe
+                const usersRef = collection(db, "usuarios");
+                const q = query(usersRef, where("username", "==", username));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    throw new Error('Nome de usuário já está em uso');
+                }
+
                 // 1. Criar usuário no Firebase Authentication
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                // 2. Criar documento na coleção EXISTENTE "usuarios" no Firestore
+                // 2. Criar documento na coleção "usuarios" no Firestore
                 await setDoc(doc(db, "usuarios", user.uid), {
+                    username: username,
                     email: email,
                     nome: nome,
                     hierarquia: hierarquia,
@@ -220,6 +236,7 @@
                 resultado.className = 'result success';
                 resultado.innerHTML = `
                     <strong>✅ Usuário criado com sucesso!</strong><br>
+                    <strong>Usuário:</strong> ${username}<br>
                     <strong>Email:</strong> ${email}<br>
                     <strong>Nome:</strong> ${nome}<br>
                     <strong>Hierarquia:</strong> ${hierarquia}<br>
@@ -229,6 +246,7 @@
                 `;
                 
                 // Limpar campos
+                document.getElementById('username').value = '';
                 document.getElementById('email').value = '';
                 document.getElementById('password').value = '';
                 document.getElementById('nome').value = '';
@@ -280,7 +298,7 @@
                         <div style="display: flex; justify-content: between; align-items: start;">
                             <div style="flex: 1;">
                                 <strong>${user.nome}</strong><br>
-                                <small>${user.email}</small><br>
+                                <small>Usuário: ${user.username} | Email: ${user.email}</small><br>
                                 <small>Hierarquia: <strong>${user.hierarquia}</strong> | 
                                 Departamento: ${user.departamento || 'Não informado'}</small>
                             </div>
