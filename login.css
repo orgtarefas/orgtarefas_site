@@ -1,4 +1,4 @@
-/* login.css - CSS ULTRA LIMPO SEM BLOQUEIOS */
+/* login.css - CSS SIMPLES */
 :root {
     --primary: #0078d4;
     --primary-dark: #106ebe;
@@ -14,17 +14,10 @@
     --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* RESET COMPLETO - SEM BLOQUEIOS */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    pointer-events: auto !important;
-    user-select: auto !important;
-    -webkit-user-select: auto !important;
-    -moz-user-select: auto !important;
-    -ms-user-select: auto !important;
-    cursor: auto !important;
 }
 
 body {
@@ -35,16 +28,11 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    pointer-events: auto !important;
 }
 
 .login-container {
-    display: flex;
     width: 100%;
     max-width: 400px;
-    position: relative;
-    z-index: 2;
-    pointer-events: auto !important;
 }
 
 .login-card {
@@ -53,49 +41,39 @@ body {
     box-shadow: var(--shadow);
     padding: 40px 30px;
     width: 100%;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-    pointer-events: auto !important;
 }
 
 .login-header {
     text-align: center;
     margin-bottom: 30px;
-    pointer-events: auto !important;
 }
 
 .login-header i {
     font-size: 3rem;
     color: var(--primary);
     margin-bottom: 15px;
-    pointer-events: auto !important;
 }
 
 .login-header h1 {
     font-size: 1.5rem;
     color: var(--dark);
     margin-bottom: 8px;
-    font-weight: 600;
-    pointer-events: auto !important;
 }
 
 .login-header p {
     color: var(--secondary);
     font-size: 0.9rem;
-    pointer-events: auto !important;
 }
 
 .login-form {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    pointer-events: auto !important;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    pointer-events: auto !important;
 }
 
 .form-group label {
@@ -106,11 +84,8 @@ body {
     font-weight: 500;
     color: var(--dark);
     font-size: 0.9rem;
-    pointer-events: auto !important;
-    cursor: pointer !important;
 }
 
-/* INPUTS COMPLETAMENTE LIBERADOS */
 .form-group input {
     padding: 12px 15px;
     border: 2px solid var(--border);
@@ -118,10 +93,6 @@ body {
     font-size: 1rem;
     transition: all 0.3s ease;
     background: var(--light);
-    pointer-events: auto !important;
-    cursor: text !important;
-    user-select: auto !important;
-    -webkit-user-select: auto !important;
     width: 100%;
 }
 
@@ -130,15 +101,8 @@ body {
     border-color: var(--primary);
     background: white;
     box-shadow: 0 0 0 3px rgba(0,120,212,0.1);
-    pointer-events: auto !important;
 }
 
-.form-group input:hover {
-    pointer-events: auto !important;
-    cursor: text !important;
-}
-
-/* BOTÃO COMPLETAMENTE LIBERADO */
 .btn-login {
     background: var(--primary);
     color: white;
@@ -147,13 +111,12 @@ body {
     border-radius: 8px;
     font-size: 1rem;
     font-weight: 600;
-    cursor: pointer !important;
+    cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    pointer-events: auto !important;
     width: 100%;
 }
 
@@ -161,55 +124,11 @@ body {
     background: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0,120,212,0.3);
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-.btn-login:active {
-    transform: translateY(0);
-    pointer-events: auto !important;
 }
 
 .btn-login:disabled {
     background: var(--secondary);
-    cursor: not-allowed !important;
-    transform: none;
-    box-shadow: none;
-    pointer-events: auto !important;
-}
-
-/* REMOVER ABSOLUTAMENTE TUDO QUE BLOQUEIA */
-div[style*="pointer-events: none"],
-div[style*="user-select: none"],
-div[style*="cursor: none"],
-.overlay,
-.blocker,
-.modal-backdrop,
-[onclick*="return false"],
-[onmousedown*="return false"] {
-    display: none !important;
-    pointer-events: none !important;
-}
-
-/* GARANTIR QUE TUDO É CLICÁVEL */
-input, button, textarea, select, label, form, div {
-    pointer-events: auto !important;
-    cursor: auto !important;
-}
-
-/* ESPECÍFICO PARA INPUTS - SEMPRE CLICÁVEIS */
-#loginUsuario, #loginPassword {
-    pointer-events: auto !important;
-    cursor: text !important;
-}
-
-#loginUsuario:focus, #loginPassword:focus {
-    pointer-events: auto !important;
-}
-
-#loginUsuario:not(:focus), #loginPassword:not(:focus) {
-    pointer-events: auto !important;
-    cursor: text !important;
+    cursor: not-allowed;
 }
 
 .spinner {
@@ -235,77 +154,9 @@ input, button, textarea, select, label, form, div {
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid var(--border);
-    pointer-events: auto !important;
 }
 
 .login-footer p {
     color: var(--secondary);
     font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    pointer-events: auto !important;
-}
-
-/* Background */
-.login-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    overflow: hidden;
-    pointer-events: none !important;
-}
-
-.background-shapes {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    pointer-events: none !important;
-}
-
-.shape {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    animation: float 6s ease-in-out infinite;
-    pointer-events: none !important;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
-    pointer-events: auto !important;
-}
-
-.modal-content {
-    background: white;
-    margin: 15% auto;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    animation: slideIn 0.3s ease;
-    pointer-events: auto !important;
-}
-
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(180deg); }
 }

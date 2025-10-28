@@ -1,51 +1,33 @@
-// login.js - VERSÃO RADICAL SEM BLOQUEIOS
-console.log('🔥 Login carregado - Versão Radical');
+// login.js - VERSÃO SIMPLEX SEM LOOPS
+console.log('🔥 Login carregado - Versão Simplex');
 
-// Função nuclear - remove TUDO que pode bloquear
-function removerBloqueiosNuclear() {
-    console.log('💥 REMOÇÃO NUCLEAR DE BLOQUEIOS');
+// Liberação UMA ÚNICA VEZ
+function liberarUmaVez() {
+    console.log('🎯 Liberação única executada');
     
-    // 1. Remover todos os event listeners problemáticos
-    const todosElementos = document.querySelectorAll('*');
+    // Apenas os elementos do formulário
+    const elementos = [
+        '#loginUsuario',
+        '#loginPassword', 
+        '#btnLogin',
+        '#loginForm',
+        '.form-group',
+        'label'
+    ];
     
-    todosElementos.forEach(element => {
-        // Clonar e substituir CADA elemento para remover event listeners
-        try {
-            const clone = element.cloneNode(true);
-            element.parentNode.replaceChild(clone, element);
-        } catch (e) {
-            // Ignorar elementos que não podem ser clonados
-        }
-    });
-    
-    // 2. Aplicar estilos liberadores em TUDO
-    document.querySelectorAll('*').forEach(el => {
-        el.style.pointerEvents = 'auto';
-        el.style.userSelect = 'auto';
-        el.style.webkitUserSelect = 'auto';
-        el.style.MozUserSelect = 'auto';
-        el.style.msUserSelect = 'auto';
-        el.style.cursor = 'auto';
-        el.disabled = false;
-        el.readOnly = false;
-        
-        // Configurar tipos específicos
-        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-            el.style.cursor = 'text';
+    elementos.forEach(seletor => {
+        const els = document.querySelectorAll(seletor);
+        els.forEach(el => {
             el.style.pointerEvents = 'auto';
-        }
-        if (el.tagName === 'BUTTON') {
-            el.style.cursor = 'pointer';
-        }
-        if (el.tagName === 'LABEL') {
-            el.style.cursor = 'pointer';
-        }
+            el.style.cursor = el.tagName === 'INPUT' ? 'text' : 'pointer';
+            el.disabled = false;
+        });
     });
     
-    console.log('✅ Remoção nuclear completa!');
+    console.log('✅ Elementos liberados');
 }
 
-// Sistema de login SUPER SIMPLES
+// Sistema de login
 async function fazerLogin(usuario, senha) {
     console.log(`🔐 Login: "${usuario}"`);
     
@@ -99,22 +81,17 @@ async function fazerLogin(usuario, senha) {
     }
 }
 
-// CONFIGURAÇÃO ULTRA SIMPLES
+// Configuração SIMPLES
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ DOM Carregado');
     
-    // REMOÇÃO NUCLEAR IMEDIATA
-    removerBloqueiosNuclear();
+    // Liberação ÚNICA
+    liberarUmaVez();
     
-    // Configurar formulário de forma DIRETA
+    // Configurar formulário
     const form = document.getElementById('loginForm');
     if (form) {
-        // Clonar e substituir o formulário para limpar event listeners
-        const novoForm = form.cloneNode(true);
-        form.parentNode.replaceChild(novoForm, form);
-        
-        // Adicionar listener DIRETO
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        form.addEventListener('submit', function(e) {
             e.preventDefault();
             const usuario = document.getElementById('loginUsuario').value;
             const senha = document.getElementById('loginPassword').value;
@@ -122,44 +99,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // CONFIGURAR INPUTS PARA CLIQUE DIRETO
-    const configurarInputs = () => {
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            // Remover listeners antigos clonando
-            const novoInput = input.cloneNode(true);
-            input.parentNode.replaceChild(novoInput, input);
-            
-            // Adicionar listener DIRETO para clique
-            novoInput.addEventListener('mousedown', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                this.focus();
-            });
-            
-            novoInput.addEventListener('click', function(e) {
-                e.stopPropagation();
-                this.focus();
-            });
+    // Configurar cliques nos inputs
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('mousedown', function(e) {
+            this.focus();
         });
-    };
-    
-    configurarInputs();
+    });
     
     // Focar automaticamente
     setTimeout(() => {
         const inputUsuario = document.getElementById('loginUsuario');
         if (inputUsuario) {
             inputUsuario.focus();
-            inputUsuario.select();
         }
-    }, 200);
+    }, 100);
 });
 
-// LOOP DE PROTEÇÃO AGGRESSIVO
-setInterval(removerBloqueiosNuclear, 500); // A cada 0.5 segundos
-
-// Liberações iniciais múltiplas
-for (let i = 0; i < 10; i++) {
-    setTimeout(removerBloqueiosNuclear, i * 100);
-}
+// Apenas UMA liberação extra após carregamento completo
+window.addEventListener('load', function() {
+    console.log('🎉 Página carregada');
+    setTimeout(liberarUmaVez, 200);
+});
