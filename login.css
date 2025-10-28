@@ -415,3 +415,26 @@ body {
 .notificacao.warning {
     border-left-color: var(--warning);
 }
+
+/* FORÇAR LIBERAÇÃO - EMERGÊNCIA */
+* {
+    pointer-events: auto !important;
+}
+
+body {
+    pointer-events: auto !important;
+}
+
+input, button, textarea, select {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Remover qualquer overlay bloqueador */
+div[style*="z-index: 9999"],
+div[style*="position: fixed"],
+div[style*="cover"],
+div[style*="blocking"] {
+    display: none !important;
+}
