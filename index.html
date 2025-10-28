@@ -15,48 +15,194 @@
             <div class="header-info">
                 <span id="data-atual"></span>
                 <span id="status-sincronizacao"><i class="fas fa-check-circle"></i> Local</span>
-                <div class="user-menu">
-                    <span id="userName">Usuário</span>
-                    <button class="btn btn-outline btn-sm" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Sair
-                    </button>
-                </div>
             </div>
         </header>
 
-        <!-- Conteúdo principal -->
-        <div style="padding: 50px; text-align: center;">
-            <h2>Sistema Carregado com Sucesso! ✅</h2>
-            <p id="mensagemUsuario">Bem-vindo ao sistema!</p>
-            <button class="btn btn-primary" onclick="window.location.href='login.html'">
-                Ir para Login
+        <!-- Barra de Ferramentas -->
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="abrirModalTarefa()">
+                <i class="fas fa-plus"></i> Nova Tarefa
             </button>
+            <button class="btn btn-secondary" onclick="exportarDados()">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+            <button class="btn btn-secondary" onclick="importarDados()">
+                <i class="fas fa-upload"></i> Importar
+            </button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar tarefas..." onkeyup="filtrarTarefas()">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+            <select id="filterStatus" onchange="filtrarTarefas()">
+                <option value="">Todos os Status</option>
+                <option value="pendente">Pendente</option>
+                <option value="em-andamento">Em Andamento</option>
+                <option value="concluido">Concluído</option>
+            </select>
+            <select id="filterPrioridade" onchange="filtrarTarefas()">
+                <option value="">Todas as Prioridades</option>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
+            </select>
+            <input type="date" id="filterData" onchange="filtrarTarefas()">
+            <button class="btn btn-outline" onclick="limparFiltros()">
+                <i class="fas fa-times"></i> Limpar Filtros
+            </button>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="total-tarefas">0</h3>
+                <p>Total de Tarefas</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="tarefas-pendentes">0</h3>
+                <p>Pendentes</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="tarefas-concluidas">0</h3>
+                <p>Concluídas</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="tarefas-atrasadas">0</h3>
+                <p>Atrasadas</p>
+            </div>
+        </div>
+
+        <!-- Lista de Tarefas -->
+        <div class="tasks-container">
+            <div id="lista-tarefas" class="tasks-list">
+                <!-- Tarefas serão carregadas aqui dinamicamente -->
+            </div>
+            <div id="mensagem-vazio" class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Nenhuma tarefa encontrada</h3>
+                <p>Clique em "Nova Tarefa" para começar</p>
+            </div>
         </div>
     </div>
 
-    <script>
-        // Verificar se usuário está logado
-        document.addEventListener('DOMContentLoaded', function() {
-            const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
-            
-            if (usuarioLogado) {
-                document.getElementById('userName').textContent = usuarioLogado.nome;
-                document.getElementById('mensagemUsuario').textContent = 
-                    `Bem-vindo, ${usuarioLogado.nome}! (${usuarioLogado.nivel})`;
-            } else {
-                document.getElementById('mensagemUsuario').textContent = 
-                    'Você não está logado. Faça login para acessar o sistema.';
-            }
-        });
+    <!-- Modal para Adicionar/Editar Tarefa -->
+    <div id="modalTarefa" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Nova Tarefa</h2>
+                <span class="close" onclick="fecharModalTarefa()">&times;</span>
+            </div>
+            <form id="formTarefa" onsubmit="salvarTarefa(event)">
+                <div class="form-group">
+                    <label for="tarefaTitulo">Título *</label>
+                    <input type="text" id="tarefaTitulo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tarefaDescricao">Descrição</label>
+                    <textarea id="tarefaDescricao" rows="3"></textarea>
+                </div>
 
-        // Função de logout
-        function logout() {
-            localStorage.removeItem('usuarioLogado');
-            window.location.href = 'login.html';
-        }
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tarefaPrioridade">Prioridade</label>
+                        <select id="tarefaPrioridade">
+                            <option value="alta">Alta</option>
+                            <option value="media" selected>Média</option>
+                            <option value="baixa">Baixa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tarefaStatus">Status</label>
+                        <select id="tarefaStatus">
+                            <option value="pendente">Pendente</option>
+                            <option value="em-andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tarefaDataInicio">Data Início</label>
+                        <input type="date" id="tarefaDataInicio">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tarefaDataFim">Data Vencimento *</label>
+                        <input type="date" id="tarefaDataFim" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tarefaResponsavel">Responsável</label>
+                    <input type="text" id="tarefaResponsavel" placeholder="Nome do responsável">
+                </div>
+
+                <!-- Subtarefas -->
+                <div class="form-group">
+                    <label>Subtarefas</label>
+                    <div id="lista-subtarefas">
+                        <!-- Subtarefas serão adicionadas aqui -->
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="adicionarSubtarefa()">
+                        <i class="fas fa-plus"></i> Adicionar Subtarefa
+                    </button>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="fecharModalTarefa()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Template de Subtarefa (Hidden) -->
+    <template id="templateSubtarefa">
+        <div class="subtarefa-item">
+            <input type="text" class="subtarefa-titulo" placeholder="Título da subtarefa">
+            <input type="date" class="subtarefa-data">
+            <select class="subtarefa-status">
+                <option value="pendente">Pendente</option>
+                <option value="concluido">Concluído</option>
+            </select>
+            <button type="button" class="btn-remove" onclick="removerSubtarefa(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </template>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs0Ke4IBfBWDrfH0AXaOhCEjtfpPtR_Vg",
+            authDomain: "orgtarefas-85358.firebaseapp.com",
+            projectId: "orgtarefas-85358",
+            storageBucket: "orgtarefas-85358.firebasestorage.app",
+            messagingSenderId: "1023569488575",
+            appId: "1:1023569488575:web:18f9e201115a1a92ccb40a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         
-        // Data atual
-        document.getElementById('data-atual').textContent = new Date().toLocaleDateString('pt-BR');
+        // Torna global para o script.js acessar
+        window.db = db;
+        window.firebaseModules = {
+            collection, onSnapshot, orderBy, query, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+        };
+        console.log('✅ Firebase configurado!');
     </script>
+
+    <script src="script.js"></script>
 </body>
 </html>

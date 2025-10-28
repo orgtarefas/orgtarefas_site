@@ -5,10 +5,13 @@ let editandoTarefaId = null;
 // Firebase - aguardar carregamento
 let db, fb;
 
-// Inicialização - MODIFICADA para esperar autenticação
-window.inicializarSistema = function() {
-    console.log('🚀 Inicializando sistema...');
-    
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    // Aguarda o Firebase carregar
+    setTimeout(inicializarSistema, 100);
+});
+
+function inicializarSistema() {
     db = window.db;
     fb = window.firebaseModules;
     
@@ -26,7 +29,31 @@ window.inicializarSistema = function() {
     
     atualizarDataAtual();
     configurarDataMinima();
-};
+}
+
+async function inicializarFirebase() {
+    try {
+        console.log('🔥 Conectando ao Firebase...');
+        
+        // Configurar listener em tempo real
+        const q = fb.query(fb.collection(db, 'tarefas'), fb.orderBy('dataCriacao', 'desc'));
+        
+        fb.onSnapshot(q, (snapshot) => {
+            tarefas = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            atualizarInterface();
+        });
+            
+        console.log('✅ Firebase conectado - Modo tempo real ativo');
+    } catch (error) {
+        console.error('❌ Erro Firebase:', error);
+        document.getElementById('status-sincronizacao').innerHTML = 
+            '<i class="fas fa-exclamation-triangle"></i> Offline';
+        carregarDoLocalStorage();
+    }
+}
 
 // Data Atual
 function atualizarDataAtual() {
@@ -298,7 +325,7 @@ function criarElementoTarefa(tarefa) {
             <span><i class="fas fa-flag-checkered"></i> ${formatarData(tarefa.dataFim)}</span>
         </div>
         
-        ${tarefa.subtarefas && tarefa.subtarefas.length > 0 ? criarHTMLSubtarefas(tarefa) : ''}
+        ${tarefa.subtarefas.length > 0 ? criarHTMLSubtarefas(tarefa) : ''}
     `;
     
     return div;
@@ -354,7 +381,7 @@ function filtrarTarefasArray() {
     return tarefas.filter(tarefa => {
         // Busca
         if (termoBusca && !tarefa.titulo.toLowerCase().includes(termoBusca) && 
-            !(tarefa.descricao && tarefa.descricao.toLowerCase().includes(termoBusca))) {
+            !tarefa.descricao.toLowerCase().includes(termoBusca)) {
             return false;
         }
         
@@ -449,44 +476,13 @@ function importarDados() {
     input.click();
 }
 
-// ========== FIREBASE ==========
-
-async function inicializarFirebase() {
-    try {
-        console.log('🔥 Conectando ao Firebase...');
-        
-        // Configurar listener em tempo real
-        const q = fb.query(fb.collection(db, 'tarefas'), fb.orderBy('dataCriacao', 'desc'));
-        
-        fb.onSnapshot(q, (snapshot) => {
-            tarefas = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            atualizarInterface();
-        });
-            
-        console.log('✅ Firebase conectado - Modo tempo real ativo');
-    } catch (error) {
-        console.error('❌ Erro Firebase:', error);
-        document.getElementById('status-sincronizacao').innerHTML = 
-            '<i class="fas fa-exclamation-triangle"></i> Offline';
-        carregarDoLocalStorage();
-    }
-}
-
 // ========== UTILITÁRIOS ==========
 
 function formatarData(dataString) {
-    if (!dataString) return 'Não definida';
     return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
 }
 
 function mostrarNotificacao(mensagem, tipo = 'info') {
-    // Remover notificações existentes
-    const notificacoesExistentes = document.querySelectorAll('.notificacao');
-    notificacoesExistentes.forEach(notif => notif.remove());
-    
     const notificacao = document.createElement('div');
     notificacao.className = `notificacao ${tipo}`;
     notificacao.innerHTML = `
@@ -505,7 +501,7 @@ function mostrarNotificacao(mensagem, tipo = 'info') {
                 notificacao.parentNode.removeChild(notificacao);
             }
         }, 300);
-    }, 4000);
+    }, 3000);
 }
 
 // Fechar modal clicando fora
@@ -515,26 +511,3 @@ window.onclick = function(event) {
         fecharModalTarefa();
     }
 }
-
-// Inicialização quando a página carregar (para casos sem autenticação)
-document.addEventListener('DOMContentLoaded', function() {
-    // Se não houver sistema de autenticação, inicializa normalmente
-    if (!window.inicializarSistema) {
-        console.log('⚡ Inicializando sem autenticação...');
-        setTimeout(function() {
-            db = window.db;
-            fb = window.firebaseModules;
-            
-            if (db && fb) {
-                inicializarFirebase();
-                document.getElementById('status-sincronizacao').innerHTML = 
-                    '<i class="fas fa-bolt"></i> Tempo Real';
-            } else {
-                carregarDoLocalStorage();
-            }
-            
-            atualizarDataAtual();
-            configurarDataMinima();
-        }, 100);
-    }
-});
