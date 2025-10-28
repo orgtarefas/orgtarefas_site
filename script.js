@@ -3,12 +3,10 @@ let tarefas = [];
 let usuarios = [];
 let editandoTarefaId = null;
 
-// Firebase
-let db;
-
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando sistema...');
+    document.getElementById('loadingText').textContent = 'Verificando autenticação...';
     
     // Verificar se usuário está logado
     const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
@@ -29,15 +27,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function inicializarSistema() {
     console.log('🔥 Inicializando Firebase...');
+    document.getElementById('loadingText').textContent = 'Conectando ao banco de dados...';
     
     // Aguardar Firebase carregar
-    if (!window.firebaseReady) {
+    if (!window.db) {
         console.log('⏳ Aguardando Firebase...');
-        setTimeout(inicializarSistema, 100);
+        setTimeout(inicializarSistema, 500);
         return;
     }
 
-    db = window.db;
     console.log('✅ Firebase carregado!');
     
     try {
@@ -45,13 +43,10 @@ function inicializarSistema() {
         carregarUsuarios();
         configurarFirebase();
         
-        // Esconder loading e mostrar conteúdo
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
         document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Offline';
+        mostrarErro('Erro ao conectar com o banco de dados');
     }
 }
 
@@ -63,6 +58,7 @@ function configurarDataMinima() {
 
 function configurarFirebase() {
     console.log('📡 Configurando listener do Firestore...');
+    document.getElementById('loadingText').textContent = 'Carregando tarefas...';
     
     // Listener em tempo real para tarefas
     db.collection("tarefas")
@@ -70,34 +66,25 @@ function configurarFirebase() {
         .onSnapshot(
             (snapshot) => {
                 console.log('📊 Dados recebidos:', snapshot.size, 'tarefas');
+                tarefas = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
                 
-                tarefas = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    console.log('📝 Dados da tarefa:', doc.id, data);
-                    
-                    return {
-                        id: doc.id,
-                        titulo: data.titulo || data.título || '', // Tenta ambos os campos
-                        descricao: data.descricao || data.descrição || '',
-                        prioridade: data.prioridade || 'media',
-                        status: data.status || 'pendente',
-                        dataInicio: data.dataInicio || data.dataInício || '',
-                        dataFim: data.dataFim || data.dataFim || '',
-                        responsavel: data.responsavel || data.responsável || '',
-                        dataCriacao: data.dataCriacao,
-                        dataAtualizacao: data.dataAtualizacao
-                    };
-                });
+                // Finalizar carregamento
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-bolt"></i> Tempo Real';
                 
-                console.log('✅ Tarefas processadas:', tarefas);
-                
-                document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-bolt"></i> Online';
                 atualizarInterface();
                 console.log('🎉 Sistema carregado com sucesso!');
             },
             (error) => {
                 console.error('❌ Erro no Firestore:', error);
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
                 document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
+                mostrarErro('Erro ao carregar tarefas: ' + error.message);
             }
         );
 }
@@ -119,8 +106,8 @@ async function carregarUsuarios() {
         const selectResponsavel = document.getElementById('tarefaResponsavel');
         const selectFiltro = document.getElementById('filterResponsavel');
         
-        selectResponsavel.innerHTML = '<option value="">Selecionar responsável...</option>';
-        selectFiltro.innerHTML = '<option value="">Todos os Responsáveis</option>';
+        selectResponsavel.innerHTML = '<option value="">Selecionar...</option>';
+        selectFiltro.innerHTML = '<option value="">Todos</option>';
         
         usuarios.forEach(usuario => {
             const option = `<option value="${usuario.usuario}">${usuario.nome || usuario.usuario}</option>`;
@@ -147,7 +134,7 @@ function abrirModalTarefa(tarefaId = null) {
         limparFormulario();
     }
     
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
 }
 
 function fecharModalTarefa() {
@@ -236,8 +223,6 @@ function atualizarEstatisticas() {
     const andamento = tarefas.filter(t => t.status === 'andamento').length;
     const concluidas = tarefas.filter(t => t.status === 'concluido').length;
 
-    console.log('📈 Estatísticas:', { total, pendentes, andamento, concluidas });
-
     document.getElementById('total-tarefas').textContent = total;
     document.getElementById('tarefas-pendentes').textContent = pendentes;
     document.getElementById('tarefas-andamento').textContent = andamento;
@@ -246,54 +231,58 @@ function atualizarEstatisticas() {
 
 function atualizarListaTarefas() {
     const container = document.getElementById('lista-tarefas');
-    const mensagemVazio = document.getElementById('mensagem-vazio');
     const tarefasFiltradas = filtrarTarefas();
 
-    console.log('🎯 Tarefas filtradas:', tarefasFiltradas.length);
-
     if (tarefasFiltradas.length === 0) {
-        container.innerHTML = '';
-        mensagemVazio.style.display = 'block';
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-tasks"></i>
+                <h3>Nenhuma tarefa encontrada</h3>
+                <p>Clique em "Nova Tarefa" para começar</p>
+            </div>
+        `;
         return;
     }
 
-    mensagemVazio.style.display = 'none';
-    container.innerHTML = tarefasFiltradas.map(tarefa => {
-        const hoje = new Date().toISOString().split('T')[0];
-        const atrasada = tarefa.dataFim && tarefa.dataFim < hoje && tarefa.status !== 'concluido';
-        
-        return `
-            <div class="task-item ${tarefa.prioridade}">
-                <div class="task-header">
-                    <div>
-                        <div class="task-title">${tarefa.titulo || 'Sem título'}</div>
-                        <div class="task-meta">
-                            <span class="badge ${tarefa.prioridade}">${tarefa.prioridade}</span>
-                            <span class="badge ${tarefa.status}">${tarefa.status}</span>
-                            ${tarefa.responsavel ? `<span><i class="fas fa-user"></i> ${tarefa.responsavel}</span>` : ''}
-                            ${atrasada ? '<span class="atrasado"><i class="fas fa-exclamation-triangle"></i> Atrasada</span>' : ''}
-                        </div>
-                    </div>
-                </div>
-                
-                ${tarefa.descricao ? `<div class="task-desc">${tarefa.descricao}</div>` : ''}
-                
-                <div class="task-meta">
-                    ${tarefa.dataInicio ? `<span><i class="fas fa-play-circle"></i> ${formatarData(tarefa.dataInicio)}</span>` : ''}
-                    <span><i class="fas fa-flag-checkered"></i> ${formatarData(tarefa.dataFim)}</span>
-                </div>
-
-                <div class="task-actions">
-                    <button class="btn btn-outline btn-sm" onclick="abrirModalTarefa('${tarefa.id}')">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="excluirTarefa('${tarefa.id}')">
-                        <i class="fas fa-trash"></i> Excluir
-                    </button>
+    container.innerHTML = tarefasFiltradas.map(tarefa => `
+        <div class="task-card prioridade-${tarefa.prioridade}">
+            <div class="task-header">
+                <div>
+                    <div class="task-title">${tarefa.titulo}</div>
+                    ${tarefa.descricao ? `<div class="task-desc">${tarefa.descricao}</div>` : ''}
                 </div>
             </div>
-        `;
-    }).join('');
+            
+            <div class="task-meta">
+                <span class="badge prioridade-${tarefa.prioridade}">
+                    ${tarefa.prioridade.charAt(0).toUpperCase() + tarefa.prioridade.slice(1)}
+                </span>
+                <span class="badge status-${tarefa.status}">
+                    ${tarefa.status === 'pendente' ? 'Pendente' : 
+                      tarefa.status === 'andamento' ? 'Em Andamento' : 'Concluído'}
+                </span>
+                ${tarefa.responsavel ? `
+                    <span class="task-responsavel">
+                        <i class="fas fa-user"></i> ${tarefa.responsavel}
+                    </span>
+                ` : ''}
+            </div>
+
+            <div class="task-meta">
+                ${tarefa.dataInicio ? `<small><i class="fas fa-play-circle"></i> ${formatarData(tarefa.dataInicio)}</small>` : ''}
+                <small><i class="fas fa-flag-checkered"></i> ${formatarData(tarefa.dataFim)}</small>
+            </div>
+
+            <div class="task-actions">
+                <button class="btn btn-outline btn-sm" onclick="abrirModalTarefa('${tarefa.id}')">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="excluirTarefa('${tarefa.id}')">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    `).join('');
 }
 
 function filtrarTarefas() {
@@ -303,8 +292,7 @@ function filtrarTarefas() {
     const responsavel = document.getElementById('filterResponsavel').value;
 
     return tarefas.filter(tarefa => {
-        // Busca
-        if (termo && !(tarefa.titulo && tarefa.titulo.toLowerCase().includes(termo)) && 
+        if (termo && !tarefa.titulo.toLowerCase().includes(termo) && 
             !(tarefa.descricao && tarefa.descricao.toLowerCase().includes(termo))) {
             return false;
         }
@@ -315,22 +303,10 @@ function filtrarTarefas() {
     });
 }
 
-function limparFiltros() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterPrioridade').value = '';
-    document.getElementById('filterResponsavel').value = '';
-    atualizarListaTarefas();
-}
-
 // Utils
 function formatarData(dataString) {
     if (!dataString) return 'Não definida';
-    try {
-        return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
-    } catch (error) {
-        return 'Data inválida';
-    }
+    return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
 }
 
 function mostrarNotificacao(mensagem, tipo) {
@@ -340,7 +316,7 @@ function mostrarNotificacao(mensagem, tipo) {
         top: 20px;
         right: 20px;
         padding: 15px 20px;
-        border-radius: 6px;
+        border-radius: 8px;
         color: white;
         font-weight: 500;
         z-index: 10000;
@@ -354,13 +330,36 @@ function mostrarNotificacao(mensagem, tipo) {
     }, 3000);
 }
 
+function mostrarErro(mensagem) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        background: #dc3545;
+        text-align: center;
+    `;
+    notification.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${mensagem}`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 5000);
+}
+
 function logout() {
     console.log('🚪 Fazendo logout...');
     localStorage.removeItem('usuarioLogado');
     window.location.href = 'login.html';
 }
 
-// Event Listeners
+// Event Listeners para filtros
 document.getElementById('searchInput').addEventListener('input', atualizarListaTarefas);
 document.getElementById('filterStatus').addEventListener('change', atualizarListaTarefas);
 document.getElementById('filterPrioridade').addEventListener('change', atualizarListaTarefas);
