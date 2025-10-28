@@ -70,10 +70,26 @@ function configurarFirebase() {
         .onSnapshot(
             (snapshot) => {
                 console.log('📊 Dados recebidos:', snapshot.size, 'tarefas');
-                tarefas = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                
+                tarefas = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    console.log('📝 Dados da tarefa:', doc.id, data);
+                    
+                    return {
+                        id: doc.id,
+                        titulo: data.titulo || data.título || '', // Tenta ambos os campos
+                        descricao: data.descricao || data.descrição || '',
+                        prioridade: data.prioridade || 'media',
+                        status: data.status || 'pendente',
+                        dataInicio: data.dataInicio || data.dataInício || '',
+                        dataFim: data.dataFim || data.dataFim || '',
+                        responsavel: data.responsavel || data.responsável || '',
+                        dataCriacao: data.dataCriacao,
+                        dataAtualizacao: data.dataAtualizacao
+                    };
+                });
+                
+                console.log('✅ Tarefas processadas:', tarefas);
                 
                 document.getElementById('status-sincronizacao').innerHTML = '<i class="fas fa-bolt"></i> Online';
                 atualizarInterface();
@@ -220,6 +236,8 @@ function atualizarEstatisticas() {
     const andamento = tarefas.filter(t => t.status === 'andamento').length;
     const concluidas = tarefas.filter(t => t.status === 'concluido').length;
 
+    console.log('📈 Estatísticas:', { total, pendentes, andamento, concluidas });
+
     document.getElementById('total-tarefas').textContent = total;
     document.getElementById('tarefas-pendentes').textContent = pendentes;
     document.getElementById('tarefas-andamento').textContent = andamento;
@@ -231,6 +249,8 @@ function atualizarListaTarefas() {
     const mensagemVazio = document.getElementById('mensagem-vazio');
     const tarefasFiltradas = filtrarTarefas();
 
+    console.log('🎯 Tarefas filtradas:', tarefasFiltradas.length);
+
     if (tarefasFiltradas.length === 0) {
         container.innerHTML = '';
         mensagemVazio.style.display = 'block';
@@ -240,13 +260,13 @@ function atualizarListaTarefas() {
     mensagemVazio.style.display = 'none';
     container.innerHTML = tarefasFiltradas.map(tarefa => {
         const hoje = new Date().toISOString().split('T')[0];
-        const atrasada = tarefa.dataFim < hoje && tarefa.status !== 'concluido';
+        const atrasada = tarefa.dataFim && tarefa.dataFim < hoje && tarefa.status !== 'concluido';
         
         return `
             <div class="task-item ${tarefa.prioridade}">
                 <div class="task-header">
                     <div>
-                        <div class="task-title">${tarefa.titulo}</div>
+                        <div class="task-title">${tarefa.titulo || 'Sem título'}</div>
                         <div class="task-meta">
                             <span class="badge ${tarefa.prioridade}">${tarefa.prioridade}</span>
                             <span class="badge ${tarefa.status}">${tarefa.status}</span>
@@ -283,7 +303,8 @@ function filtrarTarefas() {
     const responsavel = document.getElementById('filterResponsavel').value;
 
     return tarefas.filter(tarefa => {
-        if (termo && !tarefa.titulo.toLowerCase().includes(termo) && 
+        // Busca
+        if (termo && !(tarefa.titulo && tarefa.titulo.toLowerCase().includes(termo)) && 
             !(tarefa.descricao && tarefa.descricao.toLowerCase().includes(termo))) {
             return false;
         }
@@ -305,7 +326,11 @@ function limparFiltros() {
 // Utils
 function formatarData(dataString) {
     if (!dataString) return 'Não definida';
-    return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
+    try {
+        return new Date(dataString + 'T00:00:00').toLocaleDateString('pt-BR');
+    } catch (error) {
+        return 'Data inválida';
+    }
 }
 
 function mostrarNotificacao(mensagem, tipo) {
