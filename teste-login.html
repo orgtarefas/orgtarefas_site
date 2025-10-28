@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Login</title>
+    <style>
+        body { font-family: Arial; padding: 50px; background: #667eea; }
+        .card { background: white; padding: 30px; border-radius: 10px; max-width: 400px; margin: 0 auto; }
+        input, button { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #0078d4; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Teste Simples</h2>
+        <input type="email" placeholder="Email" id="email">
+        <input type="password" placeholder="Senha" id="password">
+        <button onclick="login()">Entrar</button>
+    </div>
+
+    <script>
+        function login() {
+            const email = document.getElementById('email').value;
+            alert('Login com: ' + email);
+            window.location.href = 'index.html';
+        }
+        
+        // Focar no email
+        document.getElementById('email').focus();
+    </script>
+</body>
+</html>
