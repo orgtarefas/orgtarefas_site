@@ -55,6 +55,17 @@ body {
     display: flex;
     gap: 20px;
     font-size: 0.9rem;
+    align-items: center;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-menu span {
+    font-weight: 500;
 }
 
 /* Barra de Ferramentas */
@@ -96,6 +107,10 @@ body {
     color: white;
 }
 
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
 .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
@@ -131,6 +146,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 6px;
     width: 250px;
+    font-size: 0.9rem;
 }
 
 .search-box i {
@@ -158,6 +174,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 6px;
     background: white;
+    font-size: 0.9rem;
 }
 
 /* Estatísticas */
@@ -181,6 +198,12 @@ body {
     font-size: 2rem;
     color: var(--primary);
     margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.stat-card p {
+    color: var(--secondary);
+    font-size: 0.9rem;
 }
 
 /* Lista de Tarefas */
@@ -233,6 +256,8 @@ body {
     font-size: 0.8rem;
     color: var(--secondary);
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .task-desc {
@@ -278,12 +303,18 @@ body {
     text-align: center;
     padding: 60px 20px;
     color: var(--secondary);
+    display: none;
 }
 
 .empty-state i {
     font-size: 4rem;
     margin-bottom: 20px;
     opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
 }
 
 /* Modal */
@@ -306,6 +337,8 @@ body {
     border-radius: 12px;
     box-shadow: var(--shadow);
     animation: slideIn 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 @keyframes slideIn {
@@ -319,16 +352,25 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--primary);
+    color: white;
+}
+
+.modal-header h2 {
+    color: white;
+    margin: 0;
 }
 
 .close {
     font-size: 1.5rem;
     cursor: pointer;
-    color: var(--secondary);
+    color: white;
+    background: none;
+    border: none;
 }
 
 .close:hover {
-    color: var(--dark);
+    opacity: 0.8;
 }
 
 /* Formulário */
@@ -356,6 +398,7 @@ input, select, textarea {
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.9rem;
+    font-family: inherit;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -394,6 +437,11 @@ input:focus, select:focus, textarea:focus {
         text-align: center;
     }
     
+    .header-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
     .toolbar, .filters {
         flex-direction: column;
         align-items: stretch;
@@ -401,6 +449,7 @@ input:focus, select:focus, textarea:focus {
     
     .search-box {
         margin-left: 0;
+        width: 100%;
     }
     
     .search-box input {
@@ -414,6 +463,20 @@ input:focus, select:focus, textarea:focus {
     .modal-content {
         margin: 5% auto;
         width: 95%;
+    }
+    
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+    
+    body {
+        padding: 10px;
     }
 }
 
@@ -430,11 +493,14 @@ input:focus, select:focus, textarea:focus {
 .badge.media { background: #fff3cd; color: #856404; }
 .badge.baixa { background: #e8f5e8; color: var(--success); }
 .badge.pendente { background: #fff3cd; color: #856404; }
-.badge.em-andamento { background: #cce7ff; color: var(--primary); }
+.badge.andamento { background: #cce7ff; color: var(--primary); }
 .badge.concluido { background: #e8f5e8; color: var(--success); }
 
 /* Atraso */
 .atrasado {
     color: var(--danger);
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
