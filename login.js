@@ -1,45 +1,53 @@
-// login.js - VERSÃO DEFINITIVA SEM TRAVAMENTO
-console.log('🔥 Login carregado - Versão Definitiva');
+// login.js - VERSÃO RADICAL SEM BLOQUEIOS
+console.log('🔥 Login carregado - Versão Radical');
 
-// Função para FORÇAR elementos clicáveis
-function forcarElementosClicaveis() {
-    console.log('🎯 Forçando elementos clicáveis...');
+// Função nuclear - remove TUDO que pode bloquear
+function removerBloqueiosNuclear() {
+    console.log('💥 REMOÇÃO NUCLEAR DE BLOQUEIOS');
     
-    // Lista de todos os elementos que devem ser clicáveis
-    const elementos = document.querySelectorAll('*');
+    // 1. Remover todos os event listeners problemáticos
+    const todosElementos = document.querySelectorAll('*');
     
-    elementos.forEach(el => {
-        // REMOVER qualquer bloqueio
+    todosElementos.forEach(element => {
+        // Clonar e substituir CADA elemento para remover event listeners
+        try {
+            const clone = element.cloneNode(true);
+            element.parentNode.replaceChild(clone, element);
+        } catch (e) {
+            // Ignorar elementos que não podem ser clonados
+        }
+    });
+    
+    // 2. Aplicar estilos liberadores em TUDO
+    document.querySelectorAll('*').forEach(el => {
         el.style.pointerEvents = 'auto';
         el.style.userSelect = 'auto';
         el.style.webkitUserSelect = 'auto';
+        el.style.MozUserSelect = 'auto';
+        el.style.msUserSelect = 'auto';
         el.style.cursor = 'auto';
         el.disabled = false;
         el.readOnly = false;
         
-        // Configurar específicos
+        // Configurar tipos específicos
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
             el.style.cursor = 'text';
             el.style.pointerEvents = 'auto';
         }
-        
         if (el.tagName === 'BUTTON') {
             el.style.cursor = 'pointer';
-            el.style.pointerEvents = 'auto';
         }
-        
         if (el.tagName === 'LABEL') {
             el.style.cursor = 'pointer';
-            el.style.pointerEvents = 'auto';
         }
     });
     
-    console.log('✅ Todos os elementos liberados!');
+    console.log('✅ Remoção nuclear completa!');
 }
 
-// Sistema de login
+// Sistema de login SUPER SIMPLES
 async function fazerLogin(usuario, senha) {
-    console.log(`🔐 Tentando login: "${usuario}"`);
+    console.log(`🔐 Login: "${usuario}"`);
     
     const btnLogin = document.getElementById('btnLogin');
     const btnText = document.getElementById('btnText');
@@ -71,8 +79,6 @@ async function fazerLogin(usuario, senha) {
         const userData = usuarioEncontrado.data();
         
         if (userData.senha === senha) {
-            console.log('✅ Login bem-sucedido!');
-            
             localStorage.setItem('usuarioLogado', JSON.stringify({
                 uid: usuarioEncontrado.id,
                 usuario: userData.usuario,
@@ -81,95 +87,79 @@ async function fazerLogin(usuario, senha) {
             }));
             
             window.location.href = 'index.html';
-            
         } else {
             throw new Error('Senha incorreta');
         }
         
     } catch (error) {
-        console.error('❌ Erro no login:', error);
         alert('Erro: ' + error.message);
-        
         btnLogin.disabled = false;
         btnText.textContent = 'Entrar no Sistema';
         spinner.classList.add('hidden');
     }
 }
 
-// CONFIGURAÇÃO PRINCIPAL - MANTÉM ELEMENTOS SEMPRE CLICÁVEIS
+// CONFIGURAÇÃO ULTRA SIMPLES
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Carregado - Configurando sistema...');
+    console.log('✅ DOM Carregado');
     
-    // FORÇAR liberação imediata
-    forcarElementosClicaveis();
+    // REMOÇÃO NUCLEAR IMEDIATA
+    removerBloqueiosNuclear();
     
     // Configurar formulário de forma DIRETA
     const form = document.getElementById('loginForm');
     if (form) {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
+        // Clonar e substituir o formulário para limpar event listeners
+        const novoForm = form.cloneNode(true);
+        form.parentNode.replaceChild(novoForm, form);
+        
+        // Adicionar listener DIRETO
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             const usuario = document.getElementById('loginUsuario').value;
             const senha = document.getElementById('loginPassword').value;
             fazerLogin(usuario, senha);
         });
     }
     
-    // CONFIGURAR INPUTS PARA SEREM SEMPRE CLICÁVEIS
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-        // Garantir que sempre pode focar
-        input.addEventListener('mousedown', function(e) {
-            e.stopPropagation();
-            this.focus();
+    // CONFIGURAR INPUTS PARA CLIQUE DIRETO
+    const configurarInputs = () => {
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            // Remover listeners antigos clonando
+            const novoInput = input.cloneNode(true);
+            input.parentNode.replaceChild(novoInput, input);
+            
+            // Adicionar listener DIRETO para clique
+            novoInput.addEventListener('mousedown', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.focus();
+            });
+            
+            novoInput.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.focus();
+            });
         });
-        
-        input.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.focus();
-        });
-        
-        // Quando perder foco, garantir que ainda pode ser clicado
-        input.addEventListener('blur', function() {
-            // Não fazer nada - manter clicável
-        });
-    });
+    };
     
-    // Focar no primeiro input
+    configurarInputs();
+    
+    // Focar automaticamente
     setTimeout(() => {
         const inputUsuario = document.getElementById('loginUsuario');
         if (inputUsuario) {
             inputUsuario.focus();
             inputUsuario.select();
         }
-    }, 100);
+    }, 200);
 });
 
-// MANTER SEMPRE CLICÁVEL - LOOP DE PROTEÇÃO
-setInterval(forcarElementosClicaveis, 1000); // A cada 1 segundo
+// LOOP DE PROTEÇÃO AGGRESSIVO
+setInterval(removerBloqueiosNuclear, 500); // A cada 0.5 segundos
 
-// Liberações extras para garantir
-setTimeout(forcarElementosClicaveis, 50);
-setTimeout(forcarElementosClicaveis, 200);
-setTimeout(forcarElementosClicaveis, 500);
-setTimeout(forcarElementosClicaveis, 1000);
-
-// Quando a página carregar completamente
-window.addEventListener('load', function() {
-    console.log('🎉 Página totalmente carregada!');
-    forcarElementosClicaveis();
-    
-    // Foco final
-    setTimeout(() => {
-        document.getElementById('loginUsuario')?.focus();
-    }, 300);
-});
-
-// CLIQUE EM QUALQUER LUGAR DA PÁGINA DEVE MANTER FUNCIONALIDADE
-document.addEventListener('click', function(e) {
-    // Se clicou em qualquer lugar, garantir que inputs ainda funcionam
-    forcarElementosClicaveis();
-});
-
-// Prevenir comportamentos problemáticos
-document.addEventListener('dragstart', e => e.preventDefault());
-document.addEventListener('contextmenu', e => e.preventDefault());
+// Liberações iniciais múltiplas
+for (let i = 0; i < 10; i++) {
+    setTimeout(removerBloqueiosNuclear, i * 100);
+}
