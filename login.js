@@ -1,155 +1,90 @@
-// login.js - VERSÃO DEBUG COMPLETA
-console.log('🔥 Login carregado - Debug Completo');
+// login.js - VERSÃO SIMPLIFICADA E FUNCIONAL
+console.log('🔥 Login carregado - Versão Simplificada');
 
-// Função para debug do Firestore
-async function debugFirestore() {
-    console.log('🛠️ === INICIANDO DEBUG DO FIRESTORE ===');
+// Função para ver TODOS os usuários
+async function verTodosUsuarios() {
+    console.log('🛠️ VERIFICANDO TODOS OS USUÁRIOS NO FIRESTORE...');
     
     try {
         const { db, firebaseModules: fb } = window.firebaseApp;
-        
-        if (!db) {
-            console.log('❌ Firebase não inicializado');
-            return;
-        }
-
-        console.log('1. 🔍 ACESSANDO COLEÇÃO "usuarios"...');
         const usersRef = fb.collection(db, 'usuarios');
+        const snapshot = await fb.getDocs(usersRef);
         
-        console.log('2. 📊 BUSCANDO TODOS OS DOCUMENTOS...');
-        const allUsers = await fb.getDocs(usersRef);
+        console.log(`📊 TOTAL DE USUÁRIOS: ${snapshot.size}`);
         
-        console.log(`✅ TOTAL DE DOCUMENTOS: ${allUsers.size}`);
-        
-        if (allUsers.size === 0) {
-            console.log('❌ COLEÇÃO "usuarios" ESTÁ VAZIA!');
-            return;
+        if (snapshot.size === 0) {
+            console.log('❌ NENHUM USUÁRIO ENCONTRADO!');
+            console.log('💡 Use o admin.html para criar usuários primeiro');
+            return [];
         }
-
-        console.log('3. 📋 LISTANDO TODOS OS USUÁRIOS:');
-        allUsers.forEach((doc, index) => {
+        
+        const usuarios = [];
+        snapshot.forEach((doc) => {
             const data = doc.data();
-            console.log(`--- USUÁRIO ${index + 1} ---`);
-            console.log('   ID:', doc.id);
-            console.log('   Dados completos:', JSON.stringify(data, null, 2));
+            console.log('--- USUÁRIO ---');
+            console.log('ID:', doc.id);
+            console.log('Dados:', data);
+            console.log('Usuario field:', data.usuario);
+            console.log('Senha field:', data.senha);
+            console.log('---------------');
             
-            // Mostrar campos importantes
-            console.log('   Campos específicos:');
-            console.log('   - usuario:', data.usuario || '(não definido)');
-            console.log('   - senha:', data.senha ? '***' : '(não definida)');
-            console.log('   - nivel:', data.nivel || '(não definido)');
-            console.log('   - ativo:', data.ativo);
-            console.log('   - email:', data.email || '(não definido)');
-            console.log('   - nome:', data.nome || '(não definido)');
-        });
-
-        console.log('4. 🔎 TESTANDO BUSCA COM "usuario"...');
-        const q = fb.query(usersRef, fb.where("usuario", "==", "usuario"));
-        const usuarioQuery = await fb.getDocs(q);
-        console.log(`Resultados para "usuario": ${usuarioQuery.size}`);
-
-        console.log('5. 🎯 SUGESTÕES DE LOGIN:');
-        const sugestoes = [];
-        allUsers.forEach((doc) => {
-            const data = doc.data();
-            if (data.usuario) {
-                sugestoes.push({
-                    usuario: data.usuario,
-                    senha: data.senha ? '***' : 'não definida',
-                    nivel: data.nivel
-                });
-            }
+            usuarios.push({
+                id: doc.id,
+                ...data
+            });
         });
         
-        console.log('Usuários disponíveis:', sugestoes);
-
+        return usuarios;
+        
     } catch (error) {
-        console.error('❌ ERRO NO DEBUG:', error);
+        console.error('❌ Erro ao buscar usuários:', error);
+        return [];
     }
 }
 
-// Liberar formulário
-function liberarFormulario() {
-    console.log('🎯 Liberando formulário...');
-    document.querySelectorAll('input, button').forEach(el => {
-        el.style.pointerEvents = 'auto';
-        el.disabled = false;
-    });
-}
-
-// Sistema de login
+// Sistema de login SIMPLES
 async function fazerLogin(usuario, senha) {
+    console.log(`🔐 Tentando login: "${usuario}"`);
+    
     const btnLogin = document.getElementById('btnLogin');
     const btnText = document.getElementById('btnText');
     const spinner = document.getElementById('spinner');
     
     try {
-        // Validar campos
-        if (!usuario.trim() || !senha.trim()) {
-            throw new Error('Preencha usuário e senha');
-        }
-
         // Mostrar loading
         btnLogin.disabled = true;
         btnText.textContent = 'Autenticando...';
         spinner.classList.remove('hidden');
         
-        console.log(`🔐 Tentando login com: "${usuario}"`);
+        // Primeiro, ver TODOS os usuários
+        const todosUsuarios = await verTodosUsuarios();
         
-        // Buscar usuário no Firestore
-        const { db, firebaseModules: fb } = window.firebaseApp;
-        const usersRef = fb.collection(db, 'usuarios');
-        
-        // Primeiro, vamos ver TODOS os usuários para debug
-        console.log('🔍 Buscando todos os usuários...');
-        const allUsers = await fb.getDocs(usersRef);
-        console.log(`📊 Total de usuários: ${allUsers.size}`);
-        
-        allUsers.forEach((doc, index) => {
-            const data = doc.data();
-            console.log(`Usuário ${index + 1}:`, {
-                id: doc.id,
-                usuario: data.usuario,
-                temSenha: !!data.senha,
-                nivel: data.nivel,
-                ativo: data.ativo
-            });
-        });
-        
-        // Agora buscar pelo usuário específico
-        console.log(`🎯 Buscando por: "${usuario}"`);
-        const q = fb.query(usersRef, fb.where("usuario", "==", usuario));
-        const querySnapshot = await fb.getDocs(q);
-        
-        console.log(`📈 Resultados encontrados: ${querySnapshot.size}`);
-        
-        if (querySnapshot.empty) {
-            // Mostrar sugestões
-            const sugestoes = [];
-            allUsers.forEach((doc) => {
-                const data = doc.data();
-                if (data.usuario) sugestoes.push(data.usuario);
-            });
-            
-            throw new Error(`Usuário não encontrado. Tente: ${sugestoes.join(', ') || 'cadastrar um usuário primeiro'}`);
+        if (todosUsuarios.length === 0) {
+            throw new Error('Nenhum usuário cadastrado. Use admin.html primeiro.');
         }
         
-        // Usuário encontrado
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
+        // Buscar usuário específico
+        const usuarioEncontrado = todosUsuarios.find(u => 
+            u.usuario && u.usuario.toString().toLowerCase() === usuario.toLowerCase().trim()
+        );
         
-        console.log('✅ Usuário encontrado:', userData);
+        console.log('🔍 Resultado da busca:', usuarioEncontrado);
+        
+        if (!usuarioEncontrado) {
+            const usuariosDisponiveis = todosUsuarios.map(u => u.usuario).filter(Boolean);
+            throw new Error(`Usuário não encontrado. Disponíveis: ${usuariosDisponiveis.join(', ')}`);
+        }
         
         // Verificar senha
-        if (userData.senha === senha) {
-            console.log('🎉 Login bem-sucedido!');
+        if (usuarioEncontrado.senha === senha) {
+            console.log('✅ Login bem-sucedido!');
             
             // Salvar sessão
             localStorage.setItem('usuarioLogado', JSON.stringify({
-                uid: userDoc.id,
-                usuario: userData.usuario,
-                nome: userData.nome || userData.usuario,
-                nivel: userData.nivel || 'usuario'
+                uid: usuarioEncontrado.id,
+                usuario: usuarioEncontrado.usuario,
+                nome: usuarioEncontrado.nome || usuarioEncontrado.usuario,
+                nivel: usuarioEncontrado.nivel || 'usuario'
             }));
             
             // Redirecionar
@@ -162,8 +97,8 @@ async function fazerLogin(usuario, senha) {
         }
         
     } catch (error) {
-        console.error('❌ Erro:', error);
-        alert('Erro: ' + error.message);
+        console.error('❌ Erro no login:', error);
+        alert('ERRO: ' + error.message);
     } finally {
         btnLogin.disabled = false;
         btnText.textContent = 'Entrar no Sistema';
@@ -171,10 +106,15 @@ async function fazerLogin(usuario, senha) {
     }
 }
 
-// Quando carregar
+// Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Carregado');
-    liberarFormulario();
+    console.log('✅ Sistema carregado');
+    
+    // Liberar formulário
+    document.querySelectorAll('input, button').forEach(el => {
+        el.style.pointerEvents = 'auto';
+        el.disabled = false;
+    });
     
     // Configurar formulário
     const form = document.getElementById('loginForm');
@@ -182,16 +122,19 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
             const usuario = document.getElementById('loginUsuario').value;
-            const password = document.getElementById('loginPassword').value;
-            await fazerLogin(usuario, password);
+            const senha = document.getElementById('loginPassword').value;
+            await fazerLogin(usuario, senha);
         });
     }
-    
-    // Executar debug automaticamente
-    setTimeout(debugFirestore, 1000);
     
     // Focar no input
     setTimeout(() => {
         document.getElementById('loginUsuario')?.focus();
     }, 500);
+    
+    // Verificar usuários automaticamente após 2 segundos
+    setTimeout(async () => {
+        console.log('🔄 Verificando usuários automaticamente...');
+        await verTodosUsuarios();
+    }, 2000);
 });
